@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "outDir": "./.out",
+    "strict": false
+  },
+  "include": [
+    "./webpack.config.ts",
+    "./base.config.ts",
+    "./main.config.ts",
+    "./renderer.config.ts",
+    "./dev.ts"
+  ]
+}

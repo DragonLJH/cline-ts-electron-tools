@@ -1,25 +1,30 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import * as path from 'path';
 
-let mainWindow: Electron.BrowserWindow;
+// 系统识别
+const isWindows = process.platform === 'win32';
+const isMacOS = process.platform === 'darwin';
+const isLinux = process.platform === 'linux';
 
-function createWindow(): void {
-  // 创建浏览器窗口
+let mainWindow: Electron.BrowserWindow; // Home窗口（主窗口）
+let childWindows: Electron.BrowserWindow[] = []; // 子窗口数组
+let windowCounter: number = 0; // 窗口计数器
+
+function createHomeWindow(): void {
+  // 创建主窗口（Home窗口，父窗口）
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    frame: !isWindows,
+    titleBarStyle: isWindows ? 'hidden' : 'default',
+    show: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
+      preload: path.join(__dirname, '../dist/preload.js'),
     },
-    show: false, // 先不显示窗口，直到内容加载完毕
-  });
-
-  // 当窗口准备好显示时显示它
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
   });
 
   // 加载应用首页 - 开发环境用开发服务器，生产环境用本地文件
@@ -27,25 +32,184 @@ function createWindow(): void {
   console.log('🔧 环境检测:', { NODE_ENV: process.env.NODE_ENV, isDev });
 
   if (isDev) {
-    console.log('🎯 开发模式：连接webpack-dev-server');
-    mainWindow.loadURL('http://localhost:3000')
+    console.log('🏠 开发模式：加载Home（主窗口）');
+    mainWindow.loadURL('http://localhost:3000');
   } else {
-    mainWindow.loadURL(`file://${path.join(
-      __dirname,
-      "../../dist/index.html"
-    )}`)
+    mainWindow.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}`);
   }
 
+  // 当窗口准备好显示时显示它
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    console.log('✅ Home（主窗口）已显示');
 
+    // 开发环境下打开控制台
+    if (isDev) {
+      mainWindow.webContents.openDevTools();
+    }
+  });
 
-  // 当窗口被关闭时触发
+  // 主窗口关闭事件
   mainWindow.on('closed', () => {
+    console.log('❌ Home（主窗口）已关闭');
     mainWindow = null as any;
+    // 当主页关闭时，关闭所有子窗口
+    childWindows.forEach((childWin) => {
+      if (!childWin.isDestroyed()) {
+        childWin.close();
+      }
+    });
+    childWindows = []; // 清空数组
   });
 }
 
+function createChildWindow(initialRoute: string = '/'): Electron.BrowserWindow {
+  windowCounter++;
+  const windowId = windowCounter;
+
+  // 创建子窗口
+  const childWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    parent: mainWindow, // 设置父窗口
+    modal: false, // 非模态窗口，用户可以操作父窗口
+    show: false,
+    frame: !isWindows,
+    titleBarStyle: isWindows ? 'hidden' : 'default',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      preload: path.join(__dirname, '../dist/preload.js'),
+    },
+  });
+
+  // 设置窗口ID（用于标识不同窗口）
+  (childWindow as any).windowId = windowId;
+  childWindows.push(childWindow);
+
+  // 加载应用内容，包含初始路由
+  const isDev = process.env.NODE_ENV === 'development';
+  if (isDev) {
+    console.log(`🪟 开发模式：加载子窗口 ${windowId} 路由: ${initialRoute}`);
+    // 将路由信息作为query参数传递
+    const url = initialRoute === '/' ? 'http://localhost:3000' : `http://localhost:3000?initialRoute=${encodeURIComponent(initialRoute)}`;
+    childWindow.loadURL(url);
+  } else {
+    childWindow.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}${initialRoute ? `?initialRoute=${encodeURIComponent(initialRoute)}` : ''}`);
+  }
+
+  childWindow.once('ready-to-show', () => {
+    childWindow.show();
+    console.log(`✅ 子窗口 ${windowId} 已显示 (路由: ${initialRoute})`);
+
+    // 开发环境下打开控制台
+    if (isDev) {
+      childWindow.webContents.openDevTools();
+    }
+  });
+
+  childWindow.on('closed', () => {
+    console.log(`❌ 子窗口 ${windowId} 已关闭`);
+    // 从数组中移除窗口
+    const index = childWindows.indexOf(childWindow);
+    if (index > -1) {
+      childWindows.splice(index, 1);
+    }
+  });
+
+  return childWindow;
+}
+
+// 设置IPC通信，允许React应用打开多个子窗口
+ipcMain.handle('open-child-window', async (event, initialRoute: string = '/') => {
+  try {
+    const newWindow = createChildWindow(initialRoute);
+    return {
+      success: true,
+      message: `Child window ${(newWindow as any).windowId} opened with route: ${initialRoute}`,
+      windowId: (newWindow as any).windowId
+    };
+  } catch (error) {
+    return { success: false, message: `Failed to open child window: ${error instanceof Error ? error.message : String(error)}` };
+  }
+});
+
+ipcMain.handle('close-child-window', async (event) => {
+  // 关闭最后一个打开的子窗口（LIFO方式）
+  if (childWindows.length > 0) {
+    const lastWindow = childWindows[childWindows.length - 1];
+    if (!lastWindow.isDestroyed()) {
+      const windowId = (lastWindow as any).windowId;
+      lastWindow.close();
+      return { success: true, message: `Child window ${windowId} closed` };
+    }
+  }
+  return { success: false, message: 'No child windows to close' };
+});
+
+// 窗口控制相关IPC
+ipcMain.handle('minimize-window', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    win.minimize();
+    return { success: true, message: 'Window minimized' };
+  }
+  return { success: false, message: 'Window not found' };
+});
+
+ipcMain.handle('close-window', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    win.close();
+    return { success: true, message: 'Window closed' };
+  }
+  return { success: false, message: 'Window not found' };
+});
+
+ipcMain.handle('maximize-window', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    if (win.isMaximized()) {
+      win.restore();
+      return { success: true, message: 'Window restored' };
+    } else {
+      win.maximize();
+      return { success: true, message: 'Window maximized' };
+    }
+  }
+  return { success: false, message: 'Window not found' };
+});
+
+ipcMain.handle('restore-window', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    win.restore();
+    return { success: true, message: 'Window restored' };
+  }
+  return { success: false, message: 'Window not found' };
+});
+
+ipcMain.handle('is-maximized', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    return win.isMaximized();
+  }
+  return false;
+});
+
+ipcMain.handle('get-app-version', async (event) => {
+  return app.getVersion();
+});
+
 // Electron 会在初始化完成并准备创建浏览器窗口时调用此方法
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  if (isWindows) {
+    Menu.setApplicationMenu(null);
+  }
+  createHomeWindow();
+});
 
 // 当所有窗口都被关闭时退出应用
 app.on('window-all-closed', () => {
@@ -60,6 +224,6 @@ app.on('activate', () => {
   // 在 macOS 上，当单击 dock 图标并且没有其他窗口打开时，
   // 通常会在应用中重新创建一个窗口
   if (mainWindow === null) {
-    createWindow();
+    createHomeWindow();
   }
 });

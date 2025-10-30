@@ -31,7 +31,7 @@ async function runDev(): Promise<void> {
   console.log('🚀 启动开发环境...');
 
   try {
-    // 1. 先独立编译主进程
+    // 1. 先独立编译主进程和preload脚本
     console.log('📦 编译主进程...');
     const mainConfig = await import('./main.config');
 
@@ -53,6 +53,27 @@ async function runDev(): Promise<void> {
       });
     });
 
+    console.log('📦 编译preload脚本...');
+    const preloadConfig = await import('./preload.config');
+
+    await new Promise<void>((resolve, reject) => {
+      const preloadCompiler = webpack(preloadConfig.default);
+      if (!preloadCompiler) {
+        reject(new Error('无法创建preload编译器'));
+        return;
+      }
+
+      preloadCompiler.run((err, stats) => {
+        if (err) {
+          console.error('❌ preload脚本编译失败:', err);
+          reject(err);
+          return;
+        }
+        console.log('✅ preload脚本编译完成');
+        resolve();
+      });
+    });
+
     // 2. 创建渲染进程webpack编译器
     const rendererCompiler = webpack(renderer);
     if (!rendererCompiler) {
@@ -65,7 +86,7 @@ async function runDev(): Promise<void> {
       port: 3000,
       historyApiFallback: true,
       hot: true,
-      open: true,
+      open: false, // 不自动打开浏览器
     };
 
     // 创建开发服务器

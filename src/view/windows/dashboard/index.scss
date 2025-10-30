@@ -1,0 +1,43 @@
+/* widget组件全局样式，作为可复用组件保留 */
+.widget {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+  h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+  }
+
+  .widget-value {
+    font-size: 36px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 5px;
+  }
+
+  p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+  }
+}
+
+/* 子路由内容区域样式 */
+.subroute-content {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  min-height: 200px;
+  background: #f8f9fa;
+
+  &:empty::after {
+    content: "子路由内容将在这里显示，访问 analytics 或 reports 路由";
+    color: #666;
+    font-style: italic;
+  }
+}

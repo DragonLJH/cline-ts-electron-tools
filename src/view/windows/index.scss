@@ -1,0 +1,50 @@
+/* 保留全局按钮系统，支持项目统一样式 */
+.btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  justify-content: center;
+
+  &.btn-primary {
+    background: #007bff;
+    color: white;
+  }
+
+  &.btn-info {
+    background: #17a2b8;
+    color: white;
+  }
+
+  &.btn-success {
+    background: #28a745;
+    color: white;
+  }
+
+  &.btn-danger {
+    background: #dc3545;
+    color: white;
+  }
+
+  &.btn-warning {
+    background: #ffc107;
+    color: black;
+  }
+
+  &.btn-secondary {
+    background: #6c757d;
+    color: white;
+  }
+
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+}

@@ -16,6 +16,9 @@ export interface ElectronAPI {
   // 应用信息
   getAppVersion: () => Promise<string>;
   getPlatform: () => string;
+
+  // 状态管理
+  sendStateUpdate: (state: any) => void;
 }
 
 // 定义要在渲染进程中暴露的API
@@ -34,7 +37,15 @@ const electronAPI: ElectronAPI = {
   // 应用信息API
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   getPlatform: () => process.platform,
+
+  // 状态管理
+  sendStateUpdate: (state: any) => ipcRenderer.send('state-update', state),
 };
+
+// 监听状态更新并广播到renderer
+ipcRenderer.on('state-update-broadcast', (event, state) => {
+  window.postMessage({ type: 'ELECTRON_STATE_UPDATE', state }, '*');
+});
 
 // 安全地将API暴露给渲染进程
 try {

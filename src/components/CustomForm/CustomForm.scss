@@ -1,0 +1,561 @@
+// ==================== CustomForm 组件样式 ====================
+// 只包含表单容器的核心样式，移除所有重复的自定义组件样式
+
+.custom-form {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 12px 12px 0 0;
+  }
+
+  &:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .form-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid #e5e7eb;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      border-radius: 1px;
+    }
+
+    .form-title {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1f2937;
+      background: linear-gradient(135deg, #1f2937 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+    }
+  }
+
+  .form-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    .form-field {
+      transition: all 0.3s ease;
+      position: relative;
+
+      &:hover {
+        transform: translateX(4px);
+      }
+
+      &.vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      &.horizontal {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.5rem;
+        flex-direction: column;
+
+        @media (min-width: 640px) {
+          flex-direction: row;
+          align-items: center;
+
+          .form-label {
+            width: 140px;
+            margin: 0;
+            flex-shrink: 0;
+          }
+
+          .form-input {
+            flex: 1;
+          }
+        }
+      }
+
+      &.inline {
+        display: inline-block;
+        margin-right: 1.5rem;
+        margin-bottom: 0.75rem;
+      }
+
+      &.small {
+        .form-input {
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
+          height: 2.5rem;
+        }
+
+        .form-label {
+          font-size: 0.875rem;
+        }
+      }
+
+      &.medium {
+        .form-input {
+          padding: 0.75rem 1rem;
+          height: 3rem;
+        }
+      }
+
+      &.large {
+        .form-input {
+          padding: 1rem 1.25rem;
+          font-size: 1.125rem;
+          height: 3.5rem;
+        }
+
+        .form-label {
+          font-size: 1.125rem;
+        }
+      }
+
+      // 字段容器状态样式
+      &.field-error {
+        animation: shake 0.5s ease-in-out;
+      }
+
+      &.field-valid {
+        animation: bounce 0.3s ease-out;
+      }
+
+      &.field-dirty {
+        // 已输入内容的样式
+      }
+
+      .form-label {
+        font-weight: 600;
+        margin: 0 0 0.375rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        transition: all 0.2s ease;
+
+        // 默认状态
+        color: #374151;
+
+        // 必需字段标记
+        &.required::after {
+          content: '*';
+          color: #ef4444;
+          font-weight: 800;
+          margin-left: 0.125rem;
+        }
+
+        // 错误状态
+        &.label-error {
+          color: #dc2626;
+          font-weight: 700;
+        }
+
+        // 验证通过状态
+        &.label-valid {
+          color: #059669;
+          font-weight: 600;
+        }
+
+        .required-marker {
+          color: #ef4444;
+          font-weight: 800;
+        }
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        padding-right: 2.5rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        background: #ffffff;
+        font-size: 1rem;
+        line-height: 1.5;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        height: 3rem;
+
+        // 默认状态
+        color: #374151;
+
+        // 悬停状态
+        &:hover {
+          border-color: #3b82f6;
+          transform: translateY(-1px);
+        }
+
+        // 聚焦状态
+        &:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 12px rgba(0, 0, 0, 0.1);
+          transform: translateY(-1px);
+        }
+
+        // 错误状态
+        &.error {
+          border-color: #dc2626;
+          background: linear-gradient(135deg, #ffffff 0%, #fef2f2 20%);
+          animation: errorPulse 0.3s ease-in-out;
+
+          &:focus {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1), 0 2px 12px rgba(0, 0, 0, 0.1);
+          }
+        }
+
+        // 成功状态
+        &.success {
+          border-color: #059669;
+          background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 20%);
+          animation: successPulse 0.3s ease-in-out;
+
+          &:focus {
+            border-color: #059669;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1), 0 2px 12px rgba(0, 0, 0, 0.1);
+          }
+        }
+
+        // 占位符样式
+        &::placeholder {
+          color: #9ca3af;
+          transition: color 0.3s ease;
+        }
+
+        &:focus::placeholder {
+          color: #d1d5db;
+        }
+
+        // 禁用状态
+        &:disabled {
+          background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+          color: #9ca3af;
+          cursor: not-allowed;
+          border-color: #d1d5db;
+          transform: none;
+
+          &:hover {
+            transform: none;
+          }
+        }
+
+        // 输入框尺寸变体
+        &.sm {
+          height: 2.5rem;
+          padding: 0.5rem 0.75rem;
+          padding-right: 2rem;
+          font-size: 0.875rem;
+        }
+
+        &.md {
+          height: 3rem;
+          padding: 0.75rem 1rem;
+          padding-right: 2.5rem;
+        }
+
+        &.lg {
+          height: 3.5rem;
+          padding: 1rem 1.25rem;
+          padding-right: 3rem;
+          font-size: 1.125rem;
+        }
+
+        // 特殊输入类型样式
+        &[type="checkbox"],
+        &[type="radio"] {
+          width: auto;
+          margin: 0;
+          height: auto;
+          padding: 0;
+          border: none;
+          background: transparent;
+        }
+      }
+
+      .form-error {
+        margin-top: 0.375rem;
+        font-size: 0.875rem;
+        color: #ef4444;
+        font-weight: 500;
+        display: block;
+
+        &:empty {
+          display: none;
+        }
+      }
+
+      .form-description {
+        margin-top: 0.375rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+        display: block;
+
+        &:empty {
+          display: none;
+        }
+      }
+
+      .form-tooltip {
+        margin-top: 0.375rem;
+        font-size: 0.875rem;
+        color: #374151;
+        background: #f3f4f6;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        border-left: 3px solid #3b82f6;
+        display: block;
+
+        &:empty {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 2px solid #e5e7eb;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 2px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      border-radius: 1px;
+    }
+
+    .form-submit-btn,
+    .form-reset-btn {
+      padding: 0.875rem 2.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-width: 120px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+      }
+
+      &:hover:not(:disabled)::before {
+        left: 100%;
+      }
+    }
+
+    .form-submit-btn {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+      border: 2px solid transparent;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      }
+
+      &:disabled {
+        background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
+        cursor: not-allowed;
+        opacity: 0.7;
+        transform: none;
+        box-shadow: none;
+      }
+    }
+
+    .form-reset-btn {
+      background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+      color: #374151;
+      border: 2px solid #e5e7eb;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+      &:hover {
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        border-color: #d1d5db;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+    }
+  }
+
+  .form-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+
+    .form-status {
+      .form-errors-summary {
+        color: #ef4444;
+        font-size: 0.875rem;
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 1px solid #fecaca;
+        font-weight: 500;
+        animation: slideInUp 0.3s ease-out;
+        display: inline-block;
+        text-align: center;
+      }
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    border-radius: 8px;
+
+    .form-header .form-title {
+      font-size: 1.25rem;
+    }
+
+    .form-content .form-field {
+      &:hover {
+        transform: none;
+      }
+
+      &.horizontal {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+
+        .form-label {
+          width: auto;
+          margin-bottom: 0.5rem;
+        }
+      }
+    }
+
+    .form-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+
+      .form-submit-btn,
+      .form-reset-btn {
+        width: 100%;
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+
+    .form-header .form-title {
+      font-size: 1.125rem;
+    }
+  }
+}
+
+// 动画定义
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-2px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes errorPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.0);
+  }
+}
+
+@keyframes successPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.0);
+  }
+}

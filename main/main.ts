@@ -203,6 +203,17 @@ ipcMain.handle('get-app-version', async (event) => {
   return app.getVersion();
 });
 
+// 状态管理
+ipcMain.on('state-update', (event, state) => {
+  // 广播状态更新到所有窗口，除了发送者
+  const allWindows = [mainWindow, ...childWindows].filter(win => win && !win.isDestroyed());
+  allWindows.forEach(win => {
+    if (win.webContents !== event.sender) {
+      win.webContents.send('state-update-broadcast', state);
+    }
+  });
+});
+
 // Electron 会在初始化完成并准备创建浏览器窗口时调用此方法
 app.whenReady().then(() => {
   if (isWindows) {

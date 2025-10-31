@@ -31,6 +31,7 @@ export interface RouteConfig {
   keywords: string[];
   windowMode?: WindowMode; // 窗口打开模式，默认为 'inline'
   singleWindow?: boolean; // 是否只允许单个窗口实例，默认为 false
+  showInMenu?: boolean; // 是否显示在菜单栏，默认为 true
   children?: RouteConfig[]; // 子路由配置
 }
 

@@ -1,0 +1,18 @@
+// 现在所有样式都直接在 JSX 中使用 Tailwind CSS 类
+// 这个文件可以用于添加一些不会影响到主样式的额外样式，如果需要的话
+
+// 例如，可以在这里添加一些高级的自定义样式
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}

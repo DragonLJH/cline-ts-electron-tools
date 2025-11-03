@@ -17,6 +17,22 @@ export interface ElectronAPI {
   getAppVersion: () => Promise<string>;
   getPlatform: () => string;
 
+  // 文件对话框
+  showOpenDialog: (options: Electron.OpenDialogOptions) => Promise<Electron.OpenDialogReturnValue>;
+  validateFilePath: (filePath: string) => Promise<{
+    exists: boolean;
+    isDirectory?: boolean;
+    isFile?: boolean;
+    size?: number;
+    modifiedTime?: string;
+    error?: string;
+  }>;
+  readImageFile: (filePath: string) => Promise<{
+    success: boolean;
+    data?: string; // base64 data URL
+    error?: string;
+  }>;
+
   // 状态管理
   sendStateUpdate: (state: any) => void;
 }
@@ -37,6 +53,11 @@ const electronAPI: ElectronAPI = {
   // 应用信息API
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   getPlatform: () => process.platform,
+
+  // 文件对话框API
+  showOpenDialog: (options: Electron.OpenDialogOptions) => ipcRenderer.invoke('show-open-dialog', options),
+  validateFilePath: (filePath: string) => ipcRenderer.invoke('validate-file-path', filePath),
+  readImageFile: (filePath: string) => ipcRenderer.invoke('read-image-file', filePath),
 
   // 状态管理
   sendStateUpdate: (state: any) => ipcRenderer.send('state-update', state),

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, dialog } from 'electron';
 import * as path from 'path';
 
 // 系统识别
@@ -201,6 +201,80 @@ ipcMain.handle('is-maximized', async (event) => {
 
 ipcMain.handle('get-app-version', async (event) => {
   return app.getVersion();
+});
+
+// 文件对话框相关IPC
+ipcMain.handle('show-open-dialog', async (event, options) => {
+  try {
+    const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, options);
+    return result;
+  } catch (error) {
+    return {
+      canceled: true,
+      filePaths: [],
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+});
+
+// 文件路径验证 - 检查文件是否存在且可访问
+ipcMain.handle('validate-file-path', async (event, filePath: string) => {
+  const fs = await import('fs');
+  try {
+    // 检查文件是否存在
+    await fs.promises.access(filePath, fs.constants.F_OK);
+    // 获取文件信息
+    const stats = await fs.promises.stat(filePath);
+    return {
+      exists: true,
+      isDirectory: stats.isDirectory(),
+      isFile: stats.isFile(),
+      size: stats.size,
+      modifiedTime: stats.mtime.toISOString()
+    };
+  } catch (error) {
+    return {
+      exists: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+});
+
+// 读取图片文件为base64数据URL - 用于预览
+ipcMain.handle('read-image-file', async (event, filePath: string) => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  try {
+    // 检查文件是否存在
+    await fs.promises.access(filePath, fs.constants.F_OK);
+
+    // 验证是图片文件
+    const ext = path.extname(filePath).toLowerCase();
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'];
+    if (!imageExtensions.includes(ext)) {
+      return {
+        success: false,
+        error: 'Not an image file'
+      };
+    }
+
+    // 读取文件内容
+    const fileBuffer = await fs.promises.readFile(filePath);
+    const mimeType = `image/${ext.slice(1)}`;
+    const base64Data = fileBuffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64Data}`;
+
+    return {
+      success: true,
+      data: dataUrl
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 });
 
 // 状态管理

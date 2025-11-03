@@ -1,17 +1,18 @@
 import component from './page';
+import './index.scss';
 
+// 页面路由配置信息
 export const routeConfig = {
     path: '/form',
     name: 'form',
-    title: '📝 表单演示',
+    title: '表单展示',
     emoji: '📝',
     requiresAuth: false,
     layout: 'main',
-    description: 'CustomForm组件的完整演示，展示各种表单字段和验证功能',
-    keywords: ['表单', '演示', 'CustomForm', '验证', '组件'],
     windowMode: 'inline',
     singleWindow: false,
-    showInMenu: true,
+    description: '展示自定义输入框组件的功能和使用方法',
+    keywords: ['表单', '输入框', 'Input', '组件展示']
 };
 
 export default component;

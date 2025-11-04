@@ -1,0 +1,460 @@
+/* BPMN 流程设计器样式 */
+
+/* 自定义属性面板样式 */
+.custom-properties-panel {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+  background-color: #ffffff;
+}
+
+.custom-properties-panel * {
+  box-sizing: border-box;
+}
+
+/* 元素信息样式 */
+.element-info {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.element-info h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.info-item {
+  margin: 4px 0;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.info-item strong {
+  color: #374151;
+  min-width: 60px;
+}
+
+.info-item span {
+  color: #6b7280;
+  text-align: right;
+}
+
+/* 工具栏样式 */
+.custom-properties-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  flex-wrap: wrap;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbar-btn:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+  border-color: #9ca3af;
+}
+
+.toolbar-btn:active {
+  background-color: #e5e7eb;
+}
+
+/* 搜索框样式 */
+.custom-properties-search {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #ffffff;
+  color: #374151;
+  min-width: 0;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.clear-search {
+  padding: 8px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.clear-search:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+/* 属性组样式 */
+.property-groups {
+  padding: 16px;
+}
+
+.property-groups p {
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
+  margin: 0;
+}
+
+/* 空状态样式 */
+.panel-empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.panel-empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* 工具提示样式 */
+.custom-tooltip {
+  position: fixed;
+  z-index: 9999;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.custom-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 主题适应 */
+.theme-dark .custom-properties-panel {
+  background-color: #1f2937;
+  color: #d1d5db;
+}
+
+.theme-dark .element-info {
+  background-color: #111827;
+  border-color: #374151;
+}
+
+.theme-dark .info-item strong {
+  color: #d1d5db;
+}
+
+.theme-dark .info-item span {
+  color: #9ca3af;
+}
+
+.theme-dark .custom-properties-toolbar {
+  background-color: #111827;
+  border-color: #374151;
+}
+
+.theme-dark .toolbar-btn {
+  background-color: #1f2937;
+  border-color: #374151;
+  color: #d1d5db;
+}
+
+.theme-dark .toolbar-btn:hover {
+  background-color: #374151;
+  color: #f3f4f6;
+  border-color: #4b5563;
+}
+
+.theme-dark .toolbar-btn:active {
+  background-color: #4b5563;
+}
+
+.theme-dark .custom-properties-search {
+  background-color: #111827;
+  border-color: #374151;
+}
+
+.theme-dark .search-input {
+  background-color: #1f2937;
+  border-color: #374151;
+  color: #d1d5db;
+}
+
+.theme-dark .search-input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.theme-dark .property-groups p {
+  color: #9ca3af;
+}
+
+.theme-dark .panel-empty-state {
+  color: #6b7280;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .custom-properties-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-btn {
+    justify-content: center;
+  }
+
+  .search-wrapper {
+    flex-direction: column;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .element-info h4 {
+    font-size: 14px;
+  }
+
+  .info-item {
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+  }
+
+  .info-item span {
+    text-align: left;
+    color: #6b7280;
+  }
+
+  .theme-dark .info-item span {
+    color: #9ca3af;
+  }
+}
+
+/* BPMN 设计器自定义样式 */
+.djs-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.djs-palette {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+}
+
+.djs-overlay-container {
+  z-index: 100;
+}
+
+/* 属性面板样式调整 */
+.bpp-properties-panel {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+/* BPMN 元素选中状态样式 */
+.djs-element.selected .djs-hit {
+  stroke: #1890ff !important;
+  stroke-width: 2px;
+}
+
+/* 工具提示样式 */
+.djs-tooltip {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* BPMN 拖拽操作样式 */
+.djs-drag-active .djs-element {
+  opacity: 0.5;
+}
+
+/* 上下文菜单样式 */
+.djs-context-pad {
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.djs-context-pad .entry {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* BPMN 悬停效果 */
+.djs-element.hover .djs-visual {
+  filter: drop-shadow(0 0 8px rgba(24, 144, 255, 0.3));
+}
+
+/* 禁用文本选择，避免误操作 */
+.djs-container * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 允许输入框区域可以选择文本 */
+.djs-container input,
+.djs-container textarea,
+.djs-container [contenteditable] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* BPMN 连接线样式调整 */
+.djs-connection .djs-visual {
+  stroke-width: 2px;
+}
+
+.djs-connection:hover .djs-visual {
+  stroke: #1890ff;
+  stroke-width: 3px;
+}
+
+/* 流程元素标签样式 */
+.djs-label {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* BPMN 缩放控制 */
+.djs-zoom-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.djs-zoom-controls .djs-zoom-controls-button {
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #666;
+}
+
+.djs-zoom-controls .djs-zoom-controls-button:hover {
+  background: #f5f5f5;
+  color: #1890ff;
+}
+
+/* 加载状态样式 */
+.bpmn-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+}
+
+.bpmn-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #e3f2fd;
+  border-top: 3px solid #1890ff;
+  border-radius: 50%;
+  animation: bpmn-spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes bpmn-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .djs-palette {
+    display: none;
+  }
+
+  .djs-zoom-controls {
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .bpp-properties-panel {
+    width: 280px !important;
+    min-width: 280px !important;
+  }
+}
+
+/* 暗色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .djs-container {
+    background-color: #1a1a1a;
+  }
+
+  .djs-tooltip {
+    background: rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* 无障碍支持 */
+@media (prefers-reduced-motion: reduce) {
+  .djs-container *,
+  .bpmn-loading-spinner {
+    animation: none !important;
+    transition: none !important;
+  }
+}

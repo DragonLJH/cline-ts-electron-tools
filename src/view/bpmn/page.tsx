@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { initialDiagram } from '@/utils/bpmn/xmlStr'
 import CustomModeler from '@/utils/bpmn/CustomModeler';
 import { CustomPropertiesPanelRenderer, defaultCustomPropertiesConfig } from '@/utils/bpmn/CustomPropertiesPanel';
+import { contextPadProviderModule } from "@/utils/bpmn/CustomContextPadProvider"
 // 左边工具栏以及编辑节点的样式
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
@@ -58,6 +59,9 @@ const BPMNPage: React.FC = () => {
 
     const modeler = new CustomModeler({
       container: containerRef.current,
+      additionalModules: [
+        contextPadProviderModule
+      ],
       keyboard: { bindTo: document }
     });
 

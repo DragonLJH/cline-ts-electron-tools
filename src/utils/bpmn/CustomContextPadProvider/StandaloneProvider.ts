@@ -1,15 +1,16 @@
-import {
-  assign,
-  forEach,
-  isArray,
-  every,
-  isFunction
-} from 'min-dash';
+/**
+ * Standalone Context Pad Provider Implementation
+ *
+ * This is an independent implementation that manually manages all ContextPadProvider
+ * functionality without inheriting from the base class. This approach provides
+ * maximum control and customization flexibility.
+ */
+
+import { assign, every, isArray } from 'min-dash';
 import { hasPrimaryModifier } from 'diagram-js/lib/util/Mouse';
-import GlobalConnectModule from 'diagram-js/lib/features/global-connect';
 
 // Type definitions for better type safety
-interface ContextPadEntry {
+export interface ContextPadEntry {
   group: string;
   className: string;
   title: string;
@@ -20,38 +21,23 @@ interface ContextPadEntry {
   };
 }
 
-interface ContextPadEntries {
+export interface ContextPadEntries {
   [key: string]: ContextPadEntry;
 }
 
-interface ContextPadConfig {
+export interface ContextPadConfig {
   autoPlace?: boolean;
   [key: string]: any;
 }
 
-interface Element {
+export interface Element {
   type: string;
   businessObject?: any;
   [key: string]: any;
 }
 
-interface BusinessOptions {
+export interface BusinessOptions {
   [key: string]: any;
-}
-
-interface ContextPadPosition {
-  x: number;
-  y: number;
-  cursor?: {
-    x: number;
-    y: number;
-  };
-}
-
-interface ReplaceMenuConfig {
-  title: string;
-  width: number;
-  search: boolean;
 }
 
 /**
@@ -62,10 +48,12 @@ function includes<T>(array: T[], item: T): boolean {
 }
 
 /**
- * Custom Context Pad Provider for BPMN.js
- * Provides element-specific context menu entries and toolbars with TypeScript support
+ * Standalone Context Pad Provider
+ *
+ * Complete custom implementation without inheritance, offering full control
+ * over context menu behavior and appearance.
  */
-export class CustomContextPadProviderModule {
+export class StandaloneContextPadProvider {
   private _contextPad: any;
   private _modeling: any;
   private _elementFactory: any;
@@ -80,7 +68,7 @@ export class CustomContextPadProviderModule {
   private _autoPlace: any;
   private _businessCustomOptions: BusinessOptions = {};
 
-  /** Dependency injection array */
+  /** Dependency injection array for bpmn-js module system */
   public static $inject: string[] = [
     'config.contextPad',
     'injector',
@@ -114,8 +102,10 @@ export class CustomContextPadProviderModule {
   ) {
     config = config || {};
 
+    // Register this provider with the context pad
     contextPad.registerProvider(this);
 
+    // Store all dependencies
     this._contextPad = contextPad;
     this._modeling = modeling;
     this._elementFactory = elementFactory;
@@ -128,12 +118,15 @@ export class CustomContextPadProviderModule {
     this._eventBus = eventBus;
     this._appendPreview = appendPreview;
 
+    // Configure auto-place
     if (config.autoPlace !== false) {
       this._autoPlace = injector.get('autoPlace', false);
     }
 
-    console.log('[contextPad]', contextPad, this._autoPlace, popupMenu);
+    console.log('[StandaloneContextPadProvider] Initialized with full control');
+    console.log('ContextPad:', contextPad, 'AutoPlace:', this._autoPlace, 'PopupMenu:', popupMenu);
 
+    // Handle create.end event for enhanced UX
     eventBus.on('create.end', 250, (event: any) => {
       const context = event.context;
       const shape = context.shape;
@@ -143,28 +136,30 @@ export class CustomContextPadProviderModule {
       }
 
       const entries = contextPad.getEntries(shape);
-
       if (entries.replace) {
         entries.replace.action.click!(event, shape);
       }
     });
 
+    // Listen for business configuration updates
     eventBus.on('root.updateBusiness', (eventDetail: any) => {
-      console.log('CustomContextPadProviderModule[root.updateBusiness]', eventDetail);
+      console.log('[StandaloneProvider] Business update received:', eventDetail);
       const { type, ...businessObject } = eventDetail;
       this._businessCustomOptions = {
         ...this._businessCustomOptions,
         ...businessObject
       };
+      // Refresh the context pad to show updated entries
       contextPad._init();
     });
   }
 
   /**
    * Get context pad entries for multiple selected elements
+   * @param elements - Array of selected elements
+   * @returns Context pad entries for multi-element operations
    */
   public getMultiElementContextPadEntries(elements: Element[]): ContextPadEntries {
-    const modeling = this._modeling;
     const actions: ContextPadEntries = {};
 
     if (this._isDeleteAllowed(elements)) {
@@ -175,7 +170,7 @@ export class CustomContextPadProviderModule {
           title: this._translate('Remove'),
           action: {
             click: (_event: any, elements: Element[]) => {
-              modeling.removeElements(elements.slice());
+              this._modeling.removeElements(elements.slice());
             }
           }
         }
@@ -186,17 +181,15 @@ export class CustomContextPadProviderModule {
   }
 
   /**
-   * Check if deleting elements is allowed
+   * Check if deleting the given elements is allowed
+   * @param elements - Elements to check deletion permissions for
+   * @returns Whether deletion is allowed for all elements
    */
   private _isDeleteAllowed(elements: Element[]): boolean {
-    const baseAllowed = this._rules.allowed('elements.delete', {
-      elements: elements
-    });
+    const baseAllowed = this._rules.allowed('elements.delete', { elements });
 
     if (isArray(baseAllowed)) {
-      return every(baseAllowed, (element: any) => {
-        return includes(baseAllowed, element);
-      });
+      return every(baseAllowed, (element: any) => includes(baseAllowed, element));
     }
 
     return baseAllowed;
@@ -204,21 +197,11 @@ export class CustomContextPadProviderModule {
 
   /**
    * Get context pad entries for a specific element
+   * This is the main method that determines what actions are available for each element
+   * @param element - The BPMN element to get context pad entries for
+   * @returns Context pad entries customized for the element type
    */
   public getContextPadEntries(element: Element): ContextPadEntries {
-    const contextPad = this._contextPad;
-    const modeling = this._modeling;
-    const elementFactory = this._elementFactory;
-    const connect = this._connect;
-    const create = this._create;
-    const popupMenu = this._popupMenu;
-    const rules = this._rules;
-    const autoPlace = this._autoPlace;
-    const translate = this._translate;
-    const appendPreview = this._appendPreview;
-    const businessCustomOptions = this._businessCustomOptions;
-    const { type } = element;
-
     const actions: ContextPadEntries = {};
 
     // Don't show context pad for labels
@@ -226,23 +209,15 @@ export class CustomContextPadProviderModule {
       return actions;
     }
 
-    /**
-     * Remove element action
-     */
+    // Utility functions
     const removeElement = (_event: any, element: Element) => {
-      modeling.removeElements([element]);
+      this._modeling.removeElements([element]);
     };
 
-    /**
-     * Start connection action
-     */
     const startConnect = (event: any, element: Element) => {
-      connect.start(event, element);
+      this._connect.start(event, element);
     };
 
-    /**
-     * Apply business options to a shape
-     */
     const insertBusinessOptions = (setFn: (key: string, value: any) => void, options: BusinessOptions) => {
       const setOptionsRecursively = (options: BusinessOptions) => {
         Object.entries(options).forEach(([key, value]) => {
@@ -256,9 +231,7 @@ export class CustomContextPadProviderModule {
       setOptionsRecursively(options);
     };
 
-    /**
-     * Create an append action
-     */
+    // Generate append actions for different BPMN element types
     const appendAction = (
       type: string,
       className: string,
@@ -269,50 +242,35 @@ export class CustomContextPadProviderModule {
 
       if (typeof title !== 'string') {
         options = title;
-        title = translate('Append {type}', { type: shortType });
+        title = this._translate('Append {type}', { type: shortType });
       }
 
-      /**
-       * Start append operation
-       */
       const appendStart = (event: any, element: Element) => {
-        const shape = elementFactory.createShape(assign({ type }, options));
-        console.log('[appendStart]shortType', shortType, businessCustomOptions);
+        const shape = this._elementFactory.createShape(assign({ type }, options));
 
-        if (businessCustomOptions && Object.keys(businessCustomOptions).length > 0) {
-          insertBusinessOptions((key: string, value: any) => shape.businessObject.set(key, value), businessCustomOptions);
+        // Apply business options if they exist
+        if (this._businessCustomOptions && Object.keys(this._businessCustomOptions).length > 0) {
+          insertBusinessOptions((key: string, value: any) => shape.businessObject.set(key, value), this._businessCustomOptions);
         }
 
-        create.start(event, shape, { source: element });
-        appendPreview.cleanUp();
+        this._create.start(event, shape, { source: element });
+        this._appendPreview.cleanUp();
       };
 
-      /**
-       * Auto append if available
-       */
-      const appendAuto = autoPlace ? (_event: any, element: Element) => {
-        const shape = elementFactory.createShape(assign({ type }, options));
+      const appendAuto = this._autoPlace ? (_event: any, element: Element) => {
+        const shape = this._elementFactory.createShape(assign({ type }, options));
 
-        console.log('[append]shortType', shortType, businessCustomOptions);
-        if (businessCustomOptions && Object.keys(businessCustomOptions).length > 0) {
-          insertBusinessOptions((key: string, value: any) => shape.businessObject.set(key, value), businessCustomOptions);
+        if (this._businessCustomOptions && Object.keys(this._businessCustomOptions).length > 0) {
+          insertBusinessOptions((key: string, value: any) => shape.businessObject.set(key, value), this._businessCustomOptions);
         }
 
-        autoPlace.append(element, shape);
-        appendPreview.cleanUp();
+        this._autoPlace.append(element, shape);
+        this._appendPreview.cleanUp();
       } : appendStart;
 
-      /**
-       * Preview append on hover
-       */
-      const previewAppend = autoPlace ? (_event: any, element: Element) => {
-        // mouseover
-        appendPreview.create(element, type, options);
-
-        return () => {
-          // mouseout
-          appendPreview.cleanUp();
-        };
+      const previewAppend = this._autoPlace ? (_event: any, element: Element) => {
+        this._appendPreview.create(element, type, options);
+        return () => this._appendPreview.cleanUp();
       } : undefined;
 
       return {
@@ -327,90 +285,37 @@ export class CustomContextPadProviderModule {
       };
     };
 
-    /**
-     * Get position for replace menu
-     */
-    const getReplaceMenuPosition = (element: Element): ContextPadPosition => {
-      const Y_OFFSET = 5;
-      const pad = contextPad.getPad(element).html;
-      const padRect = pad.getBoundingClientRect();
-
-      return {
-        x: padRect.left,
-        y: padRect.bottom + Y_OFFSET
-      };
-    };
-
-    // Add replace menu entry
-    assign(actions, {
-      'replace': {
-        group: 'edit',
-        className: 'bpmn-icon-screw-wrench',
-        title: translate('Change type'),
-        action: {
-          click: (event: any, element: Element) => {
-            const position = assign(getReplaceMenuPosition(element), {
-              cursor: { x: event.x, y: event.y }
-            });
-
-            const config: ReplaceMenuConfig = {
-              title: translate('Change element'),
-              width: 300,
-              search: true
-            };
-
-            popupMenu.open(element, 'bpmn-replace', position, config);
-          }
-        }
-      }
-    });
-
-    // Add append actions
+    // Define standard actions available for all elements
     assign(actions, {
       'append.end-event': appendAction(
         'bpmn:EndEvent',
         'bpmn-icon-end-event-none',
-        translate('Append EndEvent')
+        this._translate('Append EndEvent')
       ),
       'append.gateway': appendAction(
         'bpmn:ExclusiveGateway',
         'bpmn-icon-gateway-none',
-        translate('Append Gateway')
-      ),
-      'append.exclusive-gateway': appendAction(
-        'bpmn:ExclusiveGateway',
-        'bpmn-icon-gateway-xor',
-        translate('Append ExclusiveGateway')
-      ),
-      'append.parallel-gateway': appendAction(
-        'bpmn:ParallelGateway',
-        'bpmn-icon-gateway-parallel',
-        translate('Append ParallelGateway')
+        this._translate('Append Gateway')
       ),
       'append.append-task': appendAction(
-        'bpmn:UserTask',
-        'bpmn-icon-user-task',
-        translate('Append UserTask')
-      ),
-      'append.receive-task': appendAction(
-        'bpmn:ReceiveTask',
-        'bpmn-icon-receive-task',
-        translate('Append ReceiveTask')
+        'bpmn:Task',
+        'bpmn-icon-task',
+        this._translate('Append Task')
       ),
     });
 
-    // Add utility actions
+    // Define edit actions (delete, connect, etc.)
     assign(actions, {
       'delete': {
         group: 'edit',
         className: 'bpmn-icon-trash',
-        title: translate('Remove'),
+        title: this._translate('Remove'),
         action: { click: removeElement }
       },
       'connect': {
         group: 'connect',
         className: 'bpmn-icon-connection-multi',
-        title: translate('Connect using Association'),
+        title: this._translate('Connect using Association'),
         action: {
           click: startConnect,
           dragstart: startConnect,
@@ -418,10 +323,20 @@ export class CustomContextPadProviderModule {
       },
     });
 
-    /**
-     * Filter actions based on allowed actions for element type
-     */
-    const actionsFilter = (filterList: string[], targetObject: ContextPadEntries, result: ContextPadEntries = {}): ContextPadEntries => {
+    // Filter actions based on element type
+    return this._filterActionsByElementType(element.type, actions);
+  }
+
+  /**
+   * Filter context pad actions based on BPMN element type
+   * Different element types should show different available actions
+   * @param elementType - The BPMN element type (e.g., 'bpmn:StartEvent')
+   * @param allActions - All possible actions
+   * @returns Filtered actions appropriate for the element type
+   */
+  private _filterActionsByElementType(elementType: string, allActions: ContextPadEntries): ContextPadEntries {
+    const actionsFilter = (filterList: string[], targetObject: ContextPadEntries): ContextPadEntries => {
+      const result: ContextPadEntries = {};
       filterList.forEach(item => {
         if (targetObject[item]) {
           result[item] = targetObject[item];
@@ -430,32 +345,24 @@ export class CustomContextPadProviderModule {
       return result;
     };
 
-    // Define allowed actions for each element type
+    // Define which actions are available for each element type
     const commonActions = ["connect", "delete"];
     const addPrefix = (list: string[], prefix = "append.") => list.map(item => prefix + item);
 
+    // Element-specific action mapping
     const elementActionMap: Record<string, string[]> = {
-      "bpmn:StartEvent": [...addPrefix(["append-task", "end-event", "exclusive-gateway", "parallel-gateway"]), ...commonActions],
-      "bpmn:UserTask": [...addPrefix(["append-task", "end-event", "exclusive-gateway", "parallel-gateway"]), ...commonActions],
+      "bpmn:StartEvent": [...addPrefix(["append-task", "end-event", "gateway"]), ...commonActions],
+      "bpmn:UserTask": [...addPrefix(["append-task", "end-event", "gateway"]), ...commonActions],
       "bpmn:ExclusiveGateway": [...addPrefix(["append-task", "end-event"]), ...commonActions],
-      "bpmn:ParallelGateway": [...addPrefix(["append-task", "end-event"]), ...commonActions],
       "bpmn:EndEvent": [...commonActions],
       "bpmn:SequenceFlow": ["delete"],
     };
 
-    // Return filtered actions based on element type
-    return Object.prototype.hasOwnProperty.call(elementActionMap, type)
-      ? actionsFilter(elementActionMap[type], actions)
-      : actions;
+    return Object.prototype.hasOwnProperty.call(elementActionMap, elementType)
+      ? actionsFilter(elementActionMap[elementType], allActions)
+      : allActions;
   }
 }
 
-// Default export for the module
-export default {
-  __init__: [
-    'contextPadProvider',
-  ],
-  __depends__: [GlobalConnectModule],
-
-  contextPadProvider: ['type', CustomContextPadProviderModule]
-};
+// Export as default module for bpmn-js integration
+export default StandaloneContextPadProvider;

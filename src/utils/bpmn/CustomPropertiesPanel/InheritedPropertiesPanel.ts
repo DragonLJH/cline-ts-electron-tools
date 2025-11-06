@@ -14,7 +14,6 @@
  * - 保留官方模块的所有特性（概念上）
  */
 
-import 'bpmn-js-properties-panel/assets/properties-panel.css';
 import { assign } from 'min-dash';
 
 // 🔒 概念性继承演示 - 不是真正的 API 继承

@@ -9,6 +9,8 @@
  * 🎓 教育演示：查看概念性继承模式
  */
 
+import CustomPropertiesPanel from './_CustomPropertiesPanel';
+
 import {
   CustomPropertiesPanelRenderer,
   CustomPropertiesPanelModule,
@@ -49,5 +51,14 @@ export {
 // 导出默认（独立实现）
 export { CustomPropertiesPanelRenderer as default };
 
+// 导出类型安全的自定义属性面板模块
+export const CustomTypeSafePropertiesPanelModule: any = {
+  __init__: ['customPropertiesPanel'],
+  customPropertiesPanel: ['type', CustomPropertiesPanel]
+};
+
 // 附加导出
 export { ConceptualInheritedPropertiesPanel as InheritanceExample };
+
+// 导出我们的类型安全实现
+export { CustomPropertiesPanel as TypeSafePropertiesPanel };

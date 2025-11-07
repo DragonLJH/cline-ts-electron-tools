@@ -1,64 +1,30 @@
-/**
- * Custom BPMN Properties Panel Module Exports
- *
- * 这个目录包含两种不同的属性面板实现方式：
- * - 独立的自定义实现 (CustomPropertiesPanelRenderer)
- * - 概念性的继承演示 (ConceptualInheritedPropertiesPanel)
- *
- * 🚀 生产推荐：使用独立的自定义实现
- * 🎓 教育演示：查看概念性继承模式
- */
+import defaultModule from './CustomPropertiesPanel';
+import { CustomPropertiesPanel } from './CustomPropertiesPanel';
 
-import CustomPropertiesPanel from './_CustomPropertiesPanel';
+// 导出类本身
+export { CustomPropertiesPanel };
+export { default as CustomPropertiesPanelModule } from './CustomPropertiesPanel';
 
-import {
-  CustomPropertiesPanelRenderer,
-  CustomPropertiesPanelModule,
-  defaultCustomPropertiesConfig,
-  CustomPropertiesConfig as StandaloneConfig
-} from './CustomPropertiesPanel';
+// 兼容性导出 - 为 BPMN 路由组件提供所需的接口
+export const CustomPropertiesPanelRenderer = CustomPropertiesPanel;
 
-import ConceptualInheritedPropertiesPanel, {
-  InheritedPropertiesPanelModule,
-  defaultInheritedConfig,
-  InheritedPropertiesConfig
-} from './InheritedPropertiesPanel';
+// 默认导出 - BPMN-JS 模块格式
+export default defaultModule;
 
-// 导出独立的自定义实现（生产推荐）
-export { CustomPropertiesPanelRenderer };
+// 类型导出
+export type {
+    CustomPropertiesPanelConfig,
+    BpmnElement,
+    BpmnPropertiesPanelProps,
+    PanelBoxProps
+} from '../types';
 
-// 导出概念性继承演示（教育用途）
-export { ConceptualInheritedPropertiesPanel };
+// 其他兼容性接口（如果需要）
+export interface PropertiesPanelConfig {
+    parent?: HTMLElement | string;
+    width?: number;
+    height?: number;
+}
 
-// 导出模块配置
-export {
-  CustomPropertiesPanelModule,      // 独立实现模块（推荐）
-  InheritedPropertiesPanelModule     // 概念性继承模块
-};
-
-// 导出默认配置
-export {
-  defaultCustomPropertiesConfig,     // 独立实现配置
-  defaultInheritedConfig             // 概念性继承配置
-};
-
-// 兼容性导出
-export {
-  StandaloneConfig,                  // 独立配置别名
-  InheritedPropertiesConfig         // 继承配置别名
-};
-
-// 导出默认（独立实现）
-export { CustomPropertiesPanelRenderer as default };
-
-// 导出类型安全的自定义属性面板模块
-export const CustomTypeSafePropertiesPanelModule: any = {
-  __init__: ['customPropertiesPanel'],
-  customPropertiesPanel: ['type', CustomPropertiesPanel]
-};
-
-// 附加导出
-export { ConceptualInheritedPropertiesPanel as InheritanceExample };
-
-// 导出我们的类型安全实现
-export { CustomPropertiesPanel as TypeSafePropertiesPanel };
+// BPMN-JS 标准模块格式
+export const propertiesPanelModule = defaultModule;

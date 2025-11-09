@@ -5,6 +5,8 @@ import { useUnmount } from '@/utils/useHooks'
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
+import { Button } from '@/components/Commom'
+import { Input } from '@/components/Input'
 import type {
     CustomPropertiesPanelConfig,
     Injector,
@@ -389,24 +391,6 @@ function BpmnPropertiesPanel(props: BpmnPropertiesPanelProps) {
             });
         };
     }
-    // return jsxRuntime.jsx(BpmnPropertiesPanelContext.Provider, {
-    //     value: bpmnPropertiesPanelContext,
-    //     children: jsxRuntime.jsx(propertiesPanel.PropertiesPanel, {
-    //         element: selectedElement,
-    //         headerProvider: PanelHeaderProvider(translate),
-    //         placeholderProvider: PanelPlaceholderProvider(translate),
-    //         groups: groups,
-    //         layoutConfig: layoutConfig,
-    //         layoutChanged: onLayoutChanged,
-    //         descriptionConfig: descriptionConfig,
-    //         descriptionLoaded: onDescriptionLoaded,
-    //         tooltipConfig: tooltipConfig,
-    //         tooltipLoaded: onTooltipLoaded,
-    //         feelPopupContainer: feelPopupContainer,
-    //         getFeelPopupLinks: getFeelPopupLinks,
-    //         eventBus: eventBus
-    //     })
-    // });
     return <div className='bpmn-properties-panel'>
         {Array.isArray(state.selectedElement) ? (
             <div className="multi-selection-notice">
@@ -455,32 +439,46 @@ const PanelBox = (props: PanelBoxProps) => {
         setRecord((prev: any) => ({ ...(prev || {}), $attrs: { ...(prev?.$attrs || {}), [key]: value } }))
         setBusinessObject((prev: any) => ({ ...(prev || {}), $attrs: { ...(prev?.$attrs || {}), [key]: value } }))
     }
-    return (<div className='bio-properties-panel-input-box'>
-        {_process ? <span>Please select an element.</span> : <>
-            <div className='id'>
-                <label>id</label>
-                <input value={selectedElement.id} readOnly />
+    return (<div className='p-4 space-y-4'>
+        {_process ? <span className='text-gray-500'>Please select an element.</span> : <>
+            <div className='space-y-2'>
+                <label className='block text-sm font-medium text-gray-700'>id</label>
+                <Input value={selectedElement.id} readOnly />
             </div>
-            <div className='name'>
-                <label>name</label>
-                <input value={_businessObject.name || ""} onChange={(e) => {
+            <div className='space-y-2'>
+                <label className='block text-sm font-medium text-gray-700'>name</label>
+                <Input value={_businessObject.name || ""} onChange={(e) => {
                     let value = e?.target?.value
                     if (value) updateName(value)
                 }} />
             </div>
             {
                 Object.keys(_businessObject.$attrs || {}).map((key) => {
-                    return <div key={key} className='attr'>
-                        <label>{key}</label>
-                        <input value={_businessObject.$attrs[key]} onChange={(e) => {
+                    return <div key={key} className='space-y-2'>
+                        <label className='block text-sm font-medium text-gray-700'>{key}</label>
+                        <Input value={_businessObject.$attrs[key]} onChange={(e) => {
                             let value = e?.target?.value
                             if (value) updateAttr(key, value)
                         }} />
                     </div>
                 })
             }
-            <div className='save-button'>
-                save
+            <div className='pt-4'>
+                <Button onClick={() => {
+                    const {
+                        $attrs: attrs,
+                        $type: type,
+                        id,
+                        sourceRef,
+                        targetRef,
+                        eventDefinitions,
+                        name,
+                        ...data
+                    } = _businessObject ?? {};
+                    modeling.updateProperties(selectedElement, { ...attrs, name })
+                }}>
+                    保存
+                </Button>
             </div>
         </>}
     </div>)

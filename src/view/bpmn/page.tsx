@@ -1,8 +1,6 @@
 // 使用新版本BPMN库，具有更好的TypeScript支持
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { initialDiagram } from '@/utils/bpmn/xmlStr'
 import CustomModeler from '@/utils/bpmn/CustomModeler';
-import { CustomPropertiesPanelRenderer } from '@/utils/bpmn/CustomPropertiesPanel';
 import { contextPadProviderModule } from "@/utils/bpmn/CustomContextPadProvider"
 import CustomTypeSafePropertiesPanelModule from "@/utils/bpmn/CustomPropertiesPanel"
 // 左边工具栏以及编辑节点的样式

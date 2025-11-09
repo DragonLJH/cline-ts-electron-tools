@@ -69,41 +69,28 @@ export function showModal(options: ModalOptions = {}): Promise<boolean> {
         cancelText = "取消",
         closeOnBackdrop = true,
     } = options;
-    // 只注入一次样式
-    if (!document.getElementById("mini-modal-style")) {
-        const style = document.createElement("style");
-        style.id = "mini-modal-style";
-        style.textContent = `
-      .mm-backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-        background:rgba(0,0,0,.45);z-index:9999}
-      .mm-dialog{background:#fff;max-width:420px;width:clamp(260px,90vw,420px);border-radius:12px;
-        box-shadow:0 10px 30px rgba(0,0,0,.2);overflow:hidden;font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
-      .mm-header{padding:14px 16px;border-bottom:1px solid #eee;font-weight:600}
-      .mm-body{padding:16px;color:#333;white-space:pre-wrap}
-      .mm-footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid #f2f2f2}
-      .mm-btn{appearance:none;border:1px solid #dcdcdc;background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer}
-      .mm-btn:focus{outline:2px solid #8ab4f8;outline-offset:2px}
-      .mm-btn-primary{background:#1677ff;color:#fff;border-color:#1677ff}
-    `;
-        document.head.appendChild(style);
-    }
+    // 使用 TailwindCSS 类名，无需额外样式注入
     return new Promise<boolean>((resolve) => {
         // 创建元素（分别创建以避免类型推断问题）
         const backdrop = _createElement({
-            class: "mm-backdrop",
+            class: "fixed inset-0 flex items-center justify-center bg-black bg-opacity-45 z-50",
             "aria-hidden": "true",
             "aria-modal": "true",
         });
         const dialog = _createElement({
-            class: "mm-dialog",
+            class: "bg-white max-w-md w-full sm:max-w-lg rounded-lg shadow-xl overflow-hidden text-sm font-sans",
             tabIndex: -1,
         });
-        const header = _createElement({ class: "mm-header" }, "div", title);
-        const body = _createElement({ class: "mm-body" }, "div", message);
-        const footer = _createElement({ class: "mm-footer" });
+        const header = _createElement({ class: "px-4 py-3.5 border-b border-gray-200 font-semibold" }, "div", title);
+        const body = _createElement({ class: "px-4 py-4 text-gray-700 whitespace-pre-wrap" }, "div", message);
+        const footer = _createElement({ class: "flex gap-2 justify-end px-4 py-3 border-t border-gray-100" });
 
-        const btnCancel = _createElement({ class: "mm-btn" }, "button", cancelText) as HTMLButtonElement;
-        const btnOk = _createElement({ class: "mm-btn mm-btn-primary" }, "button", confirmText) as HTMLButtonElement;
+        const btnCancel = _createElement({
+            class: "appearance-none border border-gray-300 bg-white rounded-md px-3.5 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:bg-gray-50"
+        }, "button", cancelText) as HTMLButtonElement;
+        const btnOk = _createElement({
+            class: "appearance-none border border-blue-600 bg-blue-600 text-white rounded-md px-3.5 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:bg-blue-700"
+        }, "button", confirmText) as HTMLButtonElement;
 
         // 组装 DOM
         footer.append(btnCancel, btnOk);

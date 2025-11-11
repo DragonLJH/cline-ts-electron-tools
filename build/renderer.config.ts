@@ -4,7 +4,7 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { Configuration } from 'webpack';
 import { createBaseConfig } from './base.config';
 
-const wenderer: Configuration & { devServer?: any } = {
+const renderer: Configuration & { devServer?: any } = {
   ...createBaseConfig(),
   mode: 'development',
   entry: './src/index.tsx',

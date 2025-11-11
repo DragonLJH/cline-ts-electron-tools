@@ -7,6 +7,9 @@ import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { Button } from '@/components/Commom'
 import { Input } from '@/components/Input'
+import { Select } from '@/components/Selection'
+import configJson from './index.json'
+import { BpmnTranslations, LanguageManager } from '@/utils/locales'
 import type {
     CustomPropertiesPanelConfig,
     Injector,
@@ -21,6 +24,102 @@ import type {
     Modeling,
     Translate
 } from '../types';
+
+// 配置类型定义
+interface PropertiesConfig {
+    version: string;
+    description: string;
+    theme: {
+        propertyPanelClass: string;
+        multiSelectionClass: string;
+        idField: {
+            className: string;
+            label: string;
+            readOnly: boolean;
+        };
+        nameField: {
+            className: string;
+            label: string;
+            readOnly: boolean;
+        };
+        attributeField: {
+            className: string;
+            readOnly: boolean;
+        };
+        saveButton: {
+            className: string;
+            text: string;
+            enabled: boolean;
+        };
+    };
+    fields: {
+        [key: string]: any;
+    };
+    behaviors: {
+        autoSave: {
+            enabled: boolean;
+            delay: number;
+            debounce: boolean;
+        };
+        confirmSave: {
+            enabled: boolean;
+            title: string;
+            message: string;
+            confirmText: string;
+            cancelText: string;
+        };
+        showProcessInfo: {
+            enabled: boolean;
+            message: string;
+        };
+        multiSelection: {
+            enabled: boolean;
+            message: string;
+        };
+    };
+    elementTypes: {
+        [elementType: string]: {
+            enabled: boolean;
+            fields?: string[];
+            attrOrder?: string[];
+            requiredAttrs?: string[];
+            reason?: string;
+        };
+    };
+    validation: {
+        enabled: boolean;
+        rules: {
+            [rule: string]: {
+                message: string;
+            };
+        };
+        showErrors: boolean;
+        errorClass: string;
+    };
+    i18n: {
+        enabled: boolean;
+        locale: string;
+        messages: {
+            [key: string]: string;
+        };
+    };
+    performance: {
+        debounceDelay: number;
+        updateThrottle: number;
+        renderOptimization: boolean;
+    };
+    extensions: {
+        customValidators: any[];
+        customRenderers: any[];
+        beforeSave: any[];
+        afterSave: any[];
+    };
+    debug: {
+        enabled: boolean;
+        logChanges: boolean;
+        logRenders: boolean;
+    };
+}
 
 
 class CustomPropertiesPanel {
@@ -403,83 +502,262 @@ function BpmnPropertiesPanel(props: BpmnPropertiesPanelProps) {
 }
 const PanelBox = (props: PanelBoxProps) => {
     const { selectedElement, modeling, eventBus } = props
-    const _process = useMemo(() => selectedElement.type === "bpmn:Process", [selectedElement.type])
+
+    // 获取配置
+    const config = configJson as PropertiesConfig;
+
+    // 检查元素类型是否启用
+    const elementTypeConfig = (config.elementTypes?.[selectedElement.type!]) || config.elementTypes?.default || {
+        enabled: true,
+        fields: ['id', 'name', 'attrs']
+    };
+
+    // 检查是否为进程类型
+    const isProcess = useMemo(() => selectedElement.type === "bpmn:Process", [selectedElement.type]);
+
+    // 检查元素是否启用
+    const isEnabled = elementTypeConfig.enabled;
+
+    // 使用配置驱动的行为
+    const behaviors = config.behaviors;
+    const theme = config.theme;
+    const i18n = config.i18n;
+
+    // 获取国际化消息 - 使用i18next
+    const getMessage = (key: string): string => {
+        if (key === 'processMessage') {
+            return BpmnTranslations.getPanelMessage('pleaseSelectElement');
+        }
+        if (key === 'multiSelectionMessage') {
+            return BpmnTranslations.getPanelMessage('multipleElementsSelected');
+        }
+        if (key === 'save') {
+            return BpmnTranslations.getDialogTranslation('confirmSave', 'confirmText');
+        }
+        // 对于BPMN字段标签，使用专用翻译工具
+        if ((config.fields.attrs.properties && key in config.fields.attrs.properties) || ['id', 'name'].includes(key)) {
+            return BpmnTranslations.getFieldTranslation(key as string);
+        }
+        // 其他消息使用通用翻译
+        const translatedMsg = LanguageManager.t(key);
+        return translatedMsg !== key ? translatedMsg : key;
+    };
+
     if (!selectedElement.businessObject) return <></>
+
+    // 如果元素类型未启用，返回空
+    if (!isEnabled) {
+        return <div className={theme.propertyPanelClass}>
+            <span className='text-gray-500'>
+                {elementTypeConfig.reason || BpmnTranslations.getPanelMessage('pleaseSelectElement')}
+            </span>
+        </div>
+    }
+
     const [_businessObject, setBusinessObject] = useState(selectedElement.businessObject)
-    const [record, setRecord] = useState(null)
+    const [record, setRecord] = useState<any>(null)
+
+    // 使用防抖的保存逻辑
+    const debouncedSave = useMemo(() => {
+        let timeout: NodeJS.Timeout;
+        return (data: any) => {
+            if (behaviors.autoSave.enabled) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    modeling.updateProperties(selectedElement, data);
+                    if (config.debug.logChanges) {
+                        console.log('[AutoSave]', data);
+                    }
+                }, behaviors.autoSave.delay);
+            }
+        };
+    }, [behaviors.autoSave, modeling, selectedElement, config.debug]);
+
     useUnmount(() => {
-        console.log("卸载时拿到最新的值:", _businessObject, _process);
-        if (!_process && !!record)
-            showModal({
-                title: "提示",
-                message: "是否更新修改",
-                confirmText: "确认",
-                cancelText: "取消",
-            }).then((ok) => {
-                if (ok) {
-                    const {
-                        $attrs: attrs,
-                        $type: type,
-                        id,
-                        sourceRef,
-                        targetRef,
-                        eventDefinitions,
-                        name,
-                        ...data
-                    } = _businessObject ?? {};
-                    modeling.updateProperties(selectedElement, { ...attrs, name })
-                }
-            })
+        if (config.debug.enabled) {
+            console.log("卸载时拿到最新的值:", _businessObject, isProcess);
+        }
+
+        if (!isProcess && !!record) {
+            // 使用配置化的确认对话框
+            if (behaviors.confirmSave.enabled) {
+                showModal({
+                    title: behaviors.confirmSave.title,
+                    message: behaviors.confirmSave.message,
+                    confirmText: behaviors.confirmSave.confirmText,
+                    cancelText: behaviors.confirmSave.cancelText,
+                }).then((ok) => {
+                    if (ok) {
+                        saveChanges();
+                    }
+                })
+            } else {
+                saveChanges();
+            }
+        }
     }, [_businessObject]);
+
+    const saveChanges = () => {
+        const {
+            $attrs: attrs,
+            $type: type,
+            id,
+            sourceRef,
+            targetRef,
+            eventDefinitions,
+            name,
+            ...data
+        } = _businessObject ?? {};
+        modeling.updateProperties(selectedElement, { ...attrs, name });
+
+        if (config.debug.logChanges) {
+            console.log('[ManualSave]', { ...attrs, name });
+        }
+    };
+
     const updateName = (name: string) => {
+        if (behaviors.autoSave.enabled) {
+            debouncedSave({ name });
+        }
         setRecord((prev: any) => ({ ...(prev || {}), name }))
         setBusinessObject((prev: any) => ({ ...(prev || {}), name }))
     }
+
     const updateAttr = (key: string, value: string) => {
+        if (behaviors.autoSave.enabled) {
+            debouncedSave({ ...(record?.$attrs || {}), [key]: value });
+        }
         setRecord((prev: any) => ({ ...(prev || {}), $attrs: { ...(prev?.$attrs || {}), [key]: value } }))
         setBusinessObject((prev: any) => ({ ...(prev || {}), $attrs: { ...(prev?.$attrs || {}), [key]: value } }))
     }
-    return (<div className='p-4 space-y-4'>
-        {_process ? <span className='text-gray-500'>Please select an element.</span> : <>
-            <div className='space-y-2'>
-                <label className='block text-sm font-medium text-gray-700'>id</label>
-                <Input value={selectedElement.id} readOnly />
+
+    // 渲染字段组件
+    const renderField = (fieldKey: string, fieldConfig: any, value: any, onChange: (value: string) => void) => {
+        if (!fieldConfig?.enabled && fieldConfig?.visible === false) return null;
+
+        const fieldClass = fieldConfig?.className || theme.attributeField.className;
+        const label = fieldConfig?.label || fieldKey;
+        const readOnly = fieldConfig?.readOnly !== undefined ? fieldConfig.readOnly : false;
+
+        return (
+            <div key={fieldKey} className={`space-y-2 flex items-center gap-[10px] ${fieldClass}`}>
+                <label className='block text-sm font-medium text-gray-700'>{getMessage(label)}</label>
+                {renderInputComponent(fieldConfig, value, onChange, { readOnly })}
             </div>
-            <div className='space-y-2'>
-                <label className='block text-sm font-medium text-gray-700'>name</label>
-                <Input value={_businessObject.name || ""} onChange={(e) => {
-                    let value = e?.target?.value
-                    if (value) updateName(value)
-                }} />
-            </div>
-            {
-                Object.keys(_businessObject.$attrs || {}).map((key) => {
-                    return <div key={key} className='space-y-2'>
-                        <label className='block text-sm font-medium text-gray-700'>{key}</label>
-                        <Input value={_businessObject.$attrs[key]} onChange={(e) => {
-                            let value = e?.target?.value
-                            if (value) updateAttr(key, value)
-                        }} />
-                    </div>
-                })
+        );
+    };
+
+    // 根据配置渲染输入组件
+    const renderInputComponent = (fieldConfig: any, value: any, onChange: (value: string) => void, extraProps: any = {}) => {
+        const { type = 'text', placeholder, options, ...fieldProps } = fieldConfig;
+
+        switch (type) {
+            case 'select':
+                return (
+                    <Select
+                        {...extraProps}
+                        {...fieldProps}
+                        value={value}
+                        onChange={onChange}
+                        options={options?.map((opt: any) => ({ value: opt.value, label: opt.label })) || []}
+                    />
+                );
+            case 'textarea':
+                return (
+                    <Input
+                        {...extraProps}
+                        {...fieldProps}
+                        as="textarea"
+                        value={value}
+                        placeholder={placeholder}
+                        onChange={onChange}
+                    />
+                );
+            default:
+                return (
+                    <Input
+                        {...extraProps}
+                        {...fieldProps}
+                        type={type}
+                        value={value}
+                        placeholder={placeholder}
+                        onChange={onChange}
+                    />
+                );
+        }
+    };
+
+    // 获取显示字段列表
+    const getDisplayFields = () => {
+        const fields = elementTypeConfig.fields || ['id', 'name', 'attrs'];
+        return fields;
+    };
+
+    // 获取排序后的属性列表
+    const getSortedAttrs = () => {
+        const attrOrder = elementTypeConfig.attrOrder || [];
+        const existingAttrs = Object.keys(_businessObject.$attrs || {});
+        const sortedAttrs = [...attrOrder];
+
+        // 添加未在排序列表中的属性
+        existingAttrs.forEach(attr => {
+            if (!sortedAttrs.includes(attr)) {
+                sortedAttrs.push(attr);
             }
-            <div className='pt-4'>
-                <Button onClick={() => {
-                    const {
-                        $attrs: attrs,
-                        $type: type,
-                        id,
-                        sourceRef,
-                        targetRef,
-                        eventDefinitions,
-                        name,
-                        ...data
-                    } = _businessObject ?? {};
-                    modeling.updateProperties(selectedElement, { ...attrs, name })
-                }}>
-                    保存
-                </Button>
-            </div>
-        </>}
-    </div>)
+        });
+
+        return sortedAttrs.filter(attr => config.fields.attrs.properties[attr]?.enabled !== false);
+    };
+
+    if (config.debug.logRenders) {
+        console.log('[PanelBox Render]', {
+            elementType: selectedElement.type,
+            isProcess,
+            displayFields: getDisplayFields(),
+            attrs: getSortedAttrs()
+        });
+    }
+
+    return (
+        <div className={theme.propertyPanelClass}>
+            {isProcess ? (
+                <span className='text-gray-500'>{getMessage('processMessage')}</span>
+            ) : (
+                <>
+                    {/* 动态渲染字段 */}
+                    {getDisplayFields().map((fieldKey: string) => {
+                        switch (fieldKey) {
+                            case 'id':
+                                return renderField('id', theme.idField, selectedElement.id, () => { });
+                            case 'name':
+                                return renderField('name', theme.nameField, _businessObject.name || "", updateName);
+                            case 'attrs':
+                                // 渲染属性字段
+                                return getSortedAttrs().map(attrKey => {
+                                    const attrConfig = config.fields.attrs.properties[attrKey] ||
+                                        { type: 'text', enabled: true, label: attrKey };
+                                    return renderField(
+                                        attrKey,
+                                        attrConfig,
+                                        _businessObject.$attrs[attrKey] || "",
+                                        (value) => updateAttr(attrKey, value)
+                                    );
+                                });
+                            default:
+                                return null;
+                        }
+                    })}
+
+                    {/* 保存按钮 */}
+                    {!behaviors.autoSave.enabled && theme.saveButton.enabled && (
+                        <div className={`pt-4 ${theme.saveButton.className}`}>
+                            <Button onClick={saveChanges}>
+                                {getMessage(theme.saveButton.text)}
+                            </Button>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
 }

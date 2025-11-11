@@ -1,0 +1,181 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "loading": "Loading...",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info",
+    "success": "Success",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "remove": "Remove",
+    "clear": "Clear",
+    "reset": "Reset",
+    "apply": "Apply",
+    "discard": "Discard",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All"
+  },
+  "bpmn": {
+    "panels": {
+      "properties": {
+        "title": "Properties Panel",
+        "messages": {
+          "pleaseSelectElement": "Please select an element to edit properties",
+          "multipleElementsSelected": "Multiple elements selected - please select a single element to edit properties",
+          "saving": "Saving changes...",
+          "saveSuccess": "Properties saved successfully",
+          "saveError": "Failed to save properties"
+        },
+        "fields": {
+          "id": {
+            "label": "ID",
+            "placeholder": "Element unique identifier"
+          },
+          "name": {
+            "label": "Name",
+            "placeholder": "Enter element name"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Enter detailed description"
+          },
+          "assignee": {
+            "label": "Assignee",
+            "placeholder": "Enter assignee name"
+          },
+          "category": {
+            "label": "Category",
+            "options": {
+              "process": "Process",
+              "task": "Task",
+              "gateway": "Gateway",
+              "event": "Event",
+              "connector": "Connector"
+            }
+          },
+          "priority": {
+            "label": "Priority",
+            "options": {
+              "low": "Low",
+              "medium": "Medium",
+              "high": "High",
+              "urgent": "Urgent"
+            }
+          },
+          "duration": {
+            "label": "Duration",
+            "placeholder": "e.g., PT1H30M (1.5 hours)",
+            "help": "ISO 8601 duration format, e.g., PT1H30M means 1.5 hours"
+          }
+        }
+      }
+    },
+    "elements": {
+      "types": {
+        "Process": {
+          "name": "Process",
+          "description": "Process definition"
+        },
+        "UserTask": {
+          "name": "User Task",
+          "description": "A task that requires human interaction"
+        },
+        "ServiceTask": {
+          "name": "Service Task",
+          "description": "An automated system task"
+        },
+        "ExclusiveGateway": {
+          "name": "Exclusive Gateway",
+          "description": "A decision gateway that chooses exactly one outgoing path"
+        },
+        "ParallelGateway": {
+          "name": "Parallel Gateway",
+          "description": "A gateway that allows parallel execution of paths"
+        },
+        "StartEvent": {
+          "name": "Start Event",
+          "description": "The process start point"
+        },
+        "EndEvent": {
+          "name": "End Event",
+          "description": "The process end point"
+        },
+        "SequenceFlow": {
+          "name": "Sequence Flow",
+          "description": "Connects process elements"
+        }
+      }
+    },
+    "tools": {
+      "palettes": {
+        "elements": "Elements",
+        "tools": "Tools",
+        "lassoTool": "Lasso Tool",
+        "globalConnectTool": "Global Connect Tool",
+        "startEvent": "Start Event",
+        "userTask": "User Task",
+        "exclusiveGateway": "Exclusive Gateway",
+        "endEvent": "End Event"
+      }
+    }
+  },
+  "validations": {
+    "required": "{{label}} is required",
+    "minLength": "{{label}} must be at least {{min}} characters",
+    "maxLength": "{{label}} must be no more than {{max}} characters",
+    "invalidFormat": "{{label}} has invalid format",
+    "email": "Invalid email format",
+    "number": "Must be a number",
+    "positiveNumber": "Must be a positive number",
+    "duration": "Invalid duration format, should be ISO 8601 format"
+  },
+  "dialogs": {
+    "confirmSave": {
+      "title": "Confirm Save",
+      "message": "Do you want to save the changes to properties?",
+      "confirmText": "Save",
+      "cancelText": "Cancel"
+    },
+    "confirmDelete": {
+      "title": "Confirm Delete",
+      "message": "Are you sure you want to delete the selected element? This action cannot be undone.",
+      "confirmText": "Delete",
+      "cancelText": "Cancel"
+    },
+    "unsavedChanges": {
+      "title": "Unsaved Changes",
+      "message": "There are unsaved changes. Are you sure you want to leave?",
+      "confirmText": "Leave",
+      "cancelText": "Stay"
+    }
+  },
+  "menu": {
+    "file": "File",
+    "edit": "Edit",
+    "view": "View",
+    "help": "Help",
+    "newWindow": "New Window",
+    "close": "Quit",
+    "copy": "Copy",
+    "paste": "Paste",
+    "fullscreen": "Toggle Fullscreen",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "closeWindow": "Close",
+    "language": "Language",
+    "languageZh": "Chinese (Simplified)",
+    "languageEn": "English"
+  }
+}

@@ -1,3 +1,21 @@
+// 窗口配置类型
+interface WindowConfig {
+  width: number;
+  height: number;
+  frame: boolean;
+  titleBarStyle: 'hidden' | 'default';
+  show: boolean;
+  webPreferences: {
+    nodeIntegration: boolean;
+    contextIsolation: boolean;
+    webSecurity: boolean;
+    allowRunningInsecureContent: boolean;
+    preload: string;
+  };
+  parent?: BrowserWindow;
+  modal?: boolean;
+}
+
 import { app, BrowserWindow, ipcMain, Menu, dialog } from 'electron';
 import * as path from 'path';
 
@@ -6,124 +24,157 @@ const isWindows = process.platform === 'win32';
 const isMacOS = process.platform === 'darwin';
 const isLinux = process.platform === 'linux';
 
-let mainWindow: Electron.BrowserWindow; // Home窗口（主窗口）
-let childWindows: Electron.BrowserWindow[] = []; // 子窗口数组
+// 窗口存储：使用Map存储所有窗口，key为窗口ID（home为主窗口, child-1/child-2等为子窗口）
+const windows = new Map<string, BrowserWindow>();
 let windowCounter: number = 0; // 窗口计数器
+
+
+// 获取开发服务器URL - 优先从配置文件读取，否则使用默认值
+const getDevServerUrl = (): string => `http://${process.env.host || 'localhost'}:${process.env.port || '3000'}`;
+
+
+
+// 公共窗口配置
+const getBaseWindowConfig = (): Omit<WindowConfig, 'width' | 'height' | 'parent' | 'modal'> => ({
+  frame: !isWindows,
+  titleBarStyle: isWindows ? 'hidden' : 'default',
+  show: false,
+  webPreferences: {
+    nodeIntegration: false,
+    contextIsolation: true,
+    webSecurity: true,
+    allowRunningInsecureContent: false,
+    preload: path.join(__dirname, '../dist/preload.js'),
+  },
+});
+
+// 获取主窗口配置
+const getHomeWindowConfig = (): WindowConfig => ({
+  ...getBaseWindowConfig(),
+  width: 1200,
+  height: 800,
+});
+
+// 获取子窗口配置
+const getChildWindowConfig = (parent: BrowserWindow): WindowConfig => ({
+  ...getBaseWindowConfig(),
+  width: 800,
+  height: 600,
+  parent,
+  modal: false,
+});
+
+
 
 function createHomeWindow(): void {
   // 创建主窗口（Home窗口，父窗口）
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    frame: !isWindows,
-    titleBarStyle: isWindows ? 'hidden' : 'default',
-    show: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      webSecurity: true,
-      allowRunningInsecureContent: false,
-      preload: path.join(__dirname, '../dist/preload.js'),
-    },
-  });
-
-  // 加载应用首页 - 开发环境用开发服务器，生产环境用本地文件
   const isDev = process.env.NODE_ENV === 'development';
   console.log('🔧 环境检测:', { NODE_ENV: process.env.NODE_ENV, isDev });
 
-  if (isDev) {
-    console.log('🏠 开发模式：加载Home（主窗口）');
-    mainWindow.loadURL('http://localhost:3000');
-  } else {
-    mainWindow.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}`);
-  }
+  console.log('🏠 开发模式：加载Home（主窗口）');
 
-  // 当窗口准备好显示时显示它
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    console.log('✅ Home（主窗口）已显示');
+  // 立即创建窗口
+  const config = getHomeWindowConfig();
+  const homeWindow = new BrowserWindow(config);
+  windows.set('home', homeWindow);
 
-    // 开发环境下打开控制台
+  // 异步加载内容
+  (async () => {
+    const routeParam = ''; // 主窗口默认路由
     if (isDev) {
-      mainWindow.webContents.openDevTools();
+      const baseUrl = await getDevServerUrl();
+      const url = `${baseUrl}${routeParam}`;
+      homeWindow.loadURL(url);
+    } else {
+      const url = `file://${path.join(__dirname, '../../dist/index.html')}`;
+      homeWindow.loadURL(url);
     }
-  });
 
-  // 主窗口关闭事件
-  mainWindow.on('closed', () => {
-    console.log('❌ Home（主窗口）已关闭');
-    mainWindow = null as any;
-    // 当主页关闭时，关闭所有子窗口
-    childWindows.forEach((childWin) => {
-      if (!childWin.isDestroyed()) {
-        childWin.close();
+    homeWindow.once('ready-to-show', () => {
+      homeWindow.show();
+      console.log('✅ Home 窗口 已显示');
+
+      if (isDev) {
+        homeWindow.webContents.openDevTools();
       }
     });
-    childWindows = []; // 清空数组
-  });
+
+    homeWindow.on('closed', () => {
+      console.log('❌ Home 窗口 已关闭');
+      windows.delete('home');
+
+      // 当主页关闭时，关闭所有子窗口
+      for (const [key, win] of windows) {
+        if (key !== 'home') {
+          if (!win.isDestroyed()) {
+            win.close();
+          }
+        }
+      }
+      windows.clear();
+    });
+  })();
 }
 
-function createChildWindow(initialRoute: string = '/'): Electron.BrowserWindow {
+function createChildWindow(initialRoute: string = '/'): BrowserWindow {
   windowCounter++;
-  const windowId = windowCounter;
+  const windowId = `child-${windowCounter}`;
 
-  // 创建子窗口
-  const childWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    parent: mainWindow, // 设置父窗口
-    modal: false, // 非模态窗口，用户可以操作父窗口
-    show: false,
-    frame: !isWindows,
-    titleBarStyle: isWindows ? 'hidden' : 'default',
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      webSecurity: true,
-      allowRunningInsecureContent: false,
-      preload: path.join(__dirname, '../dist/preload.js'),
-    },
-  });
+  console.log(`🚀 创建子窗口 ${windowId} 路由: ${initialRoute}`);
 
-  // 设置窗口ID（用于标识不同窗口）
-  (childWindow as any).windowId = windowId;
-  childWindows.push(childWindow);
+  // 立即创建窗口并返回，但异步加载内容
+  const config = getChildWindowConfig(windows.get('home')!);
+  const childWindow = new BrowserWindow(config);
 
-  // 加载应用内容，包含初始路由
-  const isDev = process.env.NODE_ENV === 'development';
-  if (isDev) {
-    console.log(`🪟 开发模式：加载子窗口 ${windowId} 路由: ${initialRoute}`);
-    // 将路由信息作为query参数传递
-    const url = initialRoute === '/' ? 'http://localhost:3000' : `http://localhost:3000?initialRoute=${encodeURIComponent(initialRoute)}`;
-    childWindow.loadURL(url);
-  } else {
-    childWindow.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}${initialRoute ? `?initialRoute=${encodeURIComponent(initialRoute)}` : ''}`);
-  }
+  // 存储到Map中
+  windows.set(windowId, childWindow);
 
-  childWindow.once('ready-to-show', () => {
-    childWindow.show();
-    console.log(`✅ 子窗口 ${windowId} 已显示 (路由: ${initialRoute})`);
+  // 异步加载内容
+  (async () => {
+    const isDev = process.env.NODE_ENV === 'development';
+    const routeParam = initialRoute !== '/' ? `?initialRoute=${encodeURIComponent(initialRoute)}` : '';
 
-    // 开发环境下打开控制台
     if (isDev) {
-      childWindow.webContents.openDevTools();
+      const baseUrl = await getDevServerUrl();
+      const url = initialRoute !== '/' ? `${baseUrl}${routeParam}` : baseUrl;
+      childWindow.loadURL(url);
+    } else {
+      const url = initialRoute !== '/' ? `file://${path.join(__dirname, '../../dist/index.html')}${routeParam}` : `file://${path.join(__dirname, '../../dist/index.html')}`;
+      childWindow.loadURL(url);
     }
-  });
 
-  childWindow.on('closed', () => {
-    console.log(`❌ 子窗口 ${windowId} 已关闭`);
-    // 从数组中移除窗口
-    const index = childWindows.indexOf(childWindow);
-    if (index > -1) {
-      childWindows.splice(index, 1);
-    }
-  });
+    // 设置窗口事件
+    childWindow.once('ready-to-show', () => {
+      childWindow.show();
+      console.log(`✅ 子窗口 ${windowId} 已显示 (路由: ${initialRoute})`);
+
+      if (isDev) {
+        childWindow.webContents.openDevTools();
+      }
+
+      console.log(`🚀 发送主窗口状态到新子窗口 ${windowId}`);
+      setTimeout(() => {
+        console.log(`🚫 禁止子窗口 ${windowId} 发送状态更新`);
+        childWindow.webContents.send('force-set-state', {
+          theme: globalAppState.theme,
+          count: globalAppState.count,
+          language: globalLanguageState.language
+        });
+      }, 100);
+    });
+
+    childWindow.on('closed', () => {
+      console.log(`❌ 子窗口 ${windowId} 已关闭`);
+      windows.delete(windowId);
+    });
+  })();
 
   return childWindow;
 }
 
 // 设置IPC通信，允许React应用打开多个子窗口
 ipcMain.handle('open-child-window', async (event, initialRoute: string = '/') => {
+  console.log('🆔 IPC收到打开子窗口请求', { initialRoute, globalAppState, globalLanguageState });
   try {
     const newWindow = createChildWindow(initialRoute);
     return {
@@ -138,12 +189,19 @@ ipcMain.handle('open-child-window', async (event, initialRoute: string = '/') =>
 
 ipcMain.handle('close-child-window', async (event) => {
   // 关闭最后一个打开的子窗口（LIFO方式）
-  if (childWindows.length > 0) {
-    const lastWindow = childWindows[childWindows.length - 1];
+  const childKeys = Array.from(windows.keys()).filter(key => key.startsWith('child-'));
+  if (childKeys.length > 0) {
+    // 按数字排序找到最后一个（假设 child-1, child-2...）
+    const sortedKeys = childKeys.sort((a, b) => {
+      const aNum = parseInt(a.replace('child-', ''));
+      const bNum = parseInt(b.replace('child-', ''));
+      return bNum - aNum;
+    });
+    const lastKey = sortedKeys[0];
+    const lastWindow = windows.get(lastKey)!;
     if (!lastWindow.isDestroyed()) {
-      const windowId = (lastWindow as any).windowId;
       lastWindow.close();
-      return { success: true, message: `Child window ${windowId} closed` };
+      return { success: true, message: `Child window ${lastKey} closed` };
     }
   }
   return { success: false, message: 'No child windows to close' };
@@ -277,15 +335,62 @@ ipcMain.handle('read-image-file', async (event, filePath: string) => {
   }
 });
 
-// 状态管理
+// 状态管理 - 全局状态存储
+let globalAppState: any = {
+  theme: 'light',
+  count: 0,
+  language: 'zh-CN' // 默认语言
+};
+
+// 全局语言状态存储
+let globalLanguageState: any = {
+  language: 'zh-CN'
+};
+
 ipcMain.on('state-update', (event, state) => {
+  console.log('📡 收到状态更新:', state);
+  console.log('发送者窗口ID:', event.sender.id);
+
+  // 处理所有窗口的状态更新（全局状态同步）
+  // 更新全局状态
+  globalAppState = { ...globalAppState, ...state };
+  console.log('📝 更新的全局状态:', globalAppState);
+
   // 广播状态更新到所有窗口，除了发送者
-  const allWindows = [mainWindow, ...childWindows].filter(win => win && !win.isDestroyed());
+  const allWindows = Array.from(windows.values()).filter(win => win && !win.isDestroyed());
   allWindows.forEach(win => {
     if (win.webContents !== event.sender) {
+      console.log(`📢 广播状态更新到窗口 ${win.id}`);
       win.webContents.send('state-update-broadcast', state);
     }
   });
+});
+
+ipcMain.on('language-update', (event, state) => {
+  console.log('🌐 收到语言状态更新:', state);
+
+  // 处理语言状态更新
+  globalLanguageState = { ...globalLanguageState, ...state };
+  console.log('📝 更新的全局语言状态:', globalLanguageState);
+
+  // 广播语言状态更新到所有窗口，除了发送者
+  const allWindows = Array.from(windows.values()).filter(win => win && !win.isDestroyed());
+  allWindows.forEach(win => {
+    if (win.webContents !== event.sender) {
+      console.log(`📢 广播语言状态更新到窗口 ${win.id}`);
+      win.webContents.send('language-update-broadcast', state);
+    }
+  });
+});
+
+
+// 获取初始状态 - 新窗口可以用此获取全局状态
+ipcMain.handle('get-initial-state', () => {
+  return globalAppState;
+});
+
+ipcMain.handle('get-initial-language-state', () => {
+  return globalLanguageState;
 });
 
 // Electron 会在初始化完成并准备创建浏览器窗口时调用此方法
@@ -308,7 +413,7 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   // 在 macOS 上，当单击 dock 图标并且没有其他窗口打开时，
   // 通常会在应用中重新创建一个窗口
-  if (mainWindow === null) {
+  if (!windows.has('home')) {
     createHomeWindow();
   }
 });

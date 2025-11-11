@@ -135,3 +135,6 @@ ehthumbs.db
 
 # Electron Builder
 app/packages.json
+
+# i18n locales source files
+src/locales/

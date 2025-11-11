@@ -35,6 +35,10 @@ export interface ElectronAPI {
 
   // 状态管理
   sendStateUpdate: (state: any) => void;
+  getInitialState: () => Promise<any>;
+  sendLanguageUpdate: (state: any) => void;
+  getInitialLanguageState: () => Promise<any>;
+
 }
 
 // 定义要在渲染进程中暴露的API
@@ -61,11 +65,31 @@ const electronAPI: ElectronAPI = {
 
   // 状态管理
   sendStateUpdate: (state: any) => ipcRenderer.send('state-update', state),
+  getInitialState: () => ipcRenderer.invoke('get-initial-state'),
+  sendLanguageUpdate: (state: any) => ipcRenderer.send('language-update', state),
+  getInitialLanguageState: () => ipcRenderer.invoke('get-initial-language-state'),
+
 };
 
 // 监听状态更新并广播到renderer
 ipcRenderer.on('state-update-broadcast', (event, state) => {
   window.postMessage({ type: 'ELECTRON_STATE_UPDATE', state }, '*');
+});
+
+ipcRenderer.on('language-update-broadcast', (event, state) => {
+  window.postMessage({ type: 'ELECTRON_LANGUAGE_UPDATE', state }, '*');
+});
+
+ipcRenderer.on('state-init', (event, state) => {
+  window.postMessage({ type: 'ELECTRON_STATE_INIT', state }, '*');
+});
+
+ipcRenderer.on('language-init', (event, state) => {
+  window.postMessage({ type: 'ELECTRON_LANGUAGE_INIT', state }, '*');
+});
+
+ipcRenderer.on('force-set-state', (event, state) => {
+  window.postMessage({ type: 'ELECTRON_FORCE_SET_STATE', state }, '*');
 });
 
 // 安全地将API暴露给渲染进程
@@ -76,7 +100,6 @@ try {
   console.error('❌ Failed to expose APIs:', error);
 }
 
-// 将路由信息存储在全局变量中，以便React应用在启动时读取
 (window as any).initialRoute = '/';
 
 // 防止渲染进程直接访问electron模块

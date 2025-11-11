@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import CustomModeler from '@/utils/bpmn/CustomModeler';
 import { contextPadProviderModule } from "@/utils/bpmn/CustomContextPadProvider"
 import CustomTypeSafePropertiesPanelModule from "@/utils/bpmn/CustomPropertiesPanel"
+import { paletteProviderModule } from "@/utils/bpmn/CustomPaletteProvider"
 // 左边工具栏以及编辑节点的样式
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
@@ -26,10 +27,8 @@ const BPMNPage: React.FC = () => {
         },
         additionalModules: [
           CustomTypeSafePropertiesPanelModule,
-          contextPadProviderModule
-          // CustomPropertiesPanelRenderer,
-          // BpmnPropertiesPanelModule,
-          // BpmnPropertiesProviderModule
+          contextPadProviderModule,
+          paletteProviderModule
         ]
       });
       // newModeler.importXML(initialDiagram)

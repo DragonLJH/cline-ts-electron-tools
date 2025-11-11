@@ -9,12 +9,21 @@ import renderer from './renderer.config';
 const DEV_SERVER_URL = 'http://localhost:3000';
 const ELECTRON_MAIN_PATH = path.resolve(__dirname, '..', '..', 'dist', 'main.js');
 
+// 开发服务器配置变量
+let actualDevConfig = {
+  host: 'localhost',
+  port: 3000,
+  url: DEV_SERVER_URL
+};
+
 async function waitForServer(url: string, timeout: number = 30000): Promise<void> {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeout) {
     try {
-      const response = await fetch(url);
+      // 使用localhost而不是IPv6格式进行检查
+      const localhostUrl = url.replace(/http:\/\/\[::1\]('|http:\/\/::1')/, 'http://localhost');
+      const response = await fetch(localhostUrl);
       if (response.ok) {
         return;
       }
@@ -80,13 +89,14 @@ async function runDev(): Promise<void> {
       throw new Error('无法创建渲染进程编译器');
     }
 
-    // 3. 配置开发服务器选项
+    // 3. 配置开发服务器选项 - 让webpack自动选择可用端口，使用localhost
     const devServerOptions = {
       compress: true,
-      port: 3000,
+      port: 'auto', // 自动选择可用端口
       historyApiFallback: true,
       hot: true,
-      open: false, // 不自动打开浏览器
+      open: false,
+      host: 'localhost', // 使用localhost，HMR会自动使用相同的host
     };
 
     // 创建开发服务器
@@ -96,10 +106,31 @@ async function runDev(): Promise<void> {
     // 启动开发服务器
     await server.start();
 
+    // 获取服务器实际分配的地址
+    const address = server.server?.address();
+    if (address && typeof address !== 'string') {
+      // 强制使用localhost作为host，确保兼容性
+      actualDevConfig = {
+        host: 'localhost',  // 统一使用localhost
+        port: address.port,
+        url: `http://localhost:${address.port}`
+      };
+      console.log('🎯 实际服务器地址:', actualDevConfig);
+      console.log(`🔗 访问URL: localhost:${address.port}`);
+    } else {
+      console.log('⚠️ 无法获取实际服务器地址，使用默认配置');
+    }
+
     // 等待服务器启动
     try {
-      await waitForServer(DEV_SERVER_URL);
+      await waitForServer(actualDevConfig.url);
       console.log('🎉 webpack开发服务器已启动');
+
+      // 将实际配置设置为环境变量，供主进程使用
+      process.env.host = actualDevConfig.host;
+      process.env.port = actualDevConfig.port.toString();
+
+      console.log(`📡 设置环境变量: ${JSON.stringify(actualDevConfig)}`);
     } catch (error) {
       console.error('❌ webpack开发服务器启动失败:', error);
       await server.stop();
@@ -108,9 +139,21 @@ async function runDev(): Promise<void> {
 
     // 启动Electron
     console.log('⚡ 启动Electron应用...');
+    console.log('🔄 传递环境变量:', {
+      DEV_SERVER_HOST: actualDevConfig.host,
+      DEV_SERVER_PORT: actualDevConfig.port.toString(),
+      DEV_SERVER_URL: actualDevConfig.url,
+    });
+
     const electronProcess = spawn('npx', ['electron', ELECTRON_MAIN_PATH], {
       stdio: 'inherit',
       shell: true,
+      env: {
+        ...process.env,
+        DEV_SERVER_HOST: actualDevConfig.host,
+        DEV_SERVER_PORT: actualDevConfig.port.toString(),
+        DEV_SERVER_URL: actualDevConfig.url,
+      },
     });
 
     // 处理进程退出

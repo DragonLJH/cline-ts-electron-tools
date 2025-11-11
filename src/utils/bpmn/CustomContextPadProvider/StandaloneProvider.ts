@@ -302,6 +302,11 @@ export class StandaloneContextPadProvider {
         'bpmn-icon-task',
         this._translate('Append Task')
       ),
+      'append.append-userTask': appendAction(
+        'bpmn:UserTask',
+        'bpmn-icon-user-task',
+        this._translate('Append UserTask')
+      ),
     });
 
     // Define edit actions (delete, connect, etc.)
@@ -351,9 +356,9 @@ export class StandaloneContextPadProvider {
 
     // Element-specific action mapping
     const elementActionMap: Record<string, string[]> = {
-      "bpmn:StartEvent": [...addPrefix(["append-task", "end-event", "gateway"]), ...commonActions],
-      "bpmn:UserTask": [...addPrefix(["append-task", "end-event", "gateway"]), ...commonActions],
-      "bpmn:ExclusiveGateway": [...addPrefix(["append-task", "end-event"]), ...commonActions],
+      "bpmn:StartEvent": [...addPrefix(["append-userTask", "end-event", "gateway"]), ...commonActions],
+      "bpmn:UserTask": [...addPrefix(["append-userTask", "end-event", "gateway"]), ...commonActions],
+      "bpmn:ExclusiveGateway": [...addPrefix(["append-userTask", "end-event"]), ...commonActions],
       "bpmn:EndEvent": [...commonActions],
       "bpmn:SequenceFlow": ["delete"],
     };

@@ -1,0 +1,247 @@
+{
+  "version": "1.0.0",
+  "description": "BPMN自定义属性面板配置",
+
+  "theme": {
+    "propertyPanelClass": "bio-properties-panel-input-box",
+    "multiSelectionClass": "multi-selection-notice",
+    "idField": {
+      "className": "id",
+      "label": "id",
+      "readOnly": true
+    },
+    "nameField": {
+      "className": "name",
+      "label": "name",
+      "readOnly": false
+    },
+    "attributeField": {
+      "className": "attr",
+      "readOnly": false
+    },
+    "saveButton": {
+      "className": "save-button",
+      "text": "save",
+      "enabled": true
+    }
+  },
+
+  "fields": {
+    "id": {
+      "enabled": true,
+      "visible": true,
+      "label": "ID",
+      "type": "text",
+      "readOnly": true,
+      "required": true,
+      "validation": {
+        "maxLength": 50
+      }
+    },
+    "name": {
+      "enabled": true,
+      "visible": true,
+      "label": "Name",
+      "type": "text",
+      "readOnly": false,
+      "required": true,
+      "placeholder": "Enter element name",
+      "validation": {
+        "minLength": 1,
+        "maxLength": 50,
+        "pattern": "^[^\\s].*[^\\s]$|^[^\\s]$"
+      }
+    },
+    "attrs": {
+      "enabled": true,
+      "visible": true,
+      "label": "Attributes",
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "textarea",
+          "label": "Description",
+          "placeholder": "Enter description",
+          "rows": 3,
+          "enabled": true,
+          "validation": {
+            "maxLength": 500
+          }
+        },
+        "category": {
+          "type": "select",
+          "label": "Category",
+          "options": [
+            { "value": "process", "label": "Process" },
+            { "value": "task", "label": "Task" },
+            { "value": "gateway", "label": "Gateway" },
+            { "value": "event", "label": "Event" },
+            { "value": "connector", "label": "Connector" }
+          ],
+          "enabled": true
+        },
+        "priority": {
+          "type": "select",
+          "label": "Priority",
+          "options": [
+            { "value": "low", "label": "Low" },
+            { "value": "medium", "label": "Medium" },
+            { "value": "high", "label": "High" },
+            { "value": "urgent", "label": "Urgent" }
+          ],
+          "enabled": true
+        },
+        "assignee": {
+          "type": "text",
+          "label": "Assignee",
+          "placeholder": "Enter assignee name",
+          "enabled": true,
+          "validation": {
+            "maxLength": 50
+          }
+        },
+        "duration": {
+          "type": "text",
+          "label": "Duration",
+          "placeholder": "e.g., PT1H30M",
+          "enabled": true,
+          "pattern": "duration",
+          "help": "ISO 8601 duration format (e.g., PT1H30M for 1.5 hours)"
+        }
+      },
+      "dynamic": true
+    }
+  },
+
+  "behaviors": {
+    "autoSave": {
+      "enabled": false,
+      "delay": 1000,
+      "debounce": true
+    },
+    "confirmSave": {
+      "enabled": true,
+      "title": "提示",
+      "message": "是否更新修改",
+      "confirmText": "确认",
+      "cancelText": "取消"
+    },
+    "showProcessInfo": {
+      "enabled": true,
+      "message": "Please select an element to edit properties"
+    },
+    "multiSelection": {
+      "enabled": true,
+      "message": "Multiple elements selected - please select a single element to edit properties"
+    }
+  },
+
+  "elementTypes": {
+    "bpmn:Process": {
+      "enabled": false,
+      "reason": "Process type elements do not have editable properties"
+    },
+    "bpmn:StartEvent": {
+      "enabled": true,
+      "fields": ["id", "name", "attrs"],
+      "excludedAttrs": []
+    },
+    "bpmn:UserTask": {
+      "enabled": true,
+      "fields": ["id", "name", "attrs"],
+      "attrOrder": ["assignee", "category", "priority", "description", "duration"],
+      "requiredAttrs": ["assignee"]
+    },
+    "bpmn:ServiceTask": {
+      "enabled": true,
+      "fields": ["id", "name", "attrs"],
+      "attrOrder": ["category", "description", "duration"],
+      "requiredAttrs": []
+    },
+    "bpmn:ExclusiveGateway": {
+      "enabled": true,
+      "fields": ["id", "name", "attrs"],
+      "attrOrder": ["description"],
+      "requiredAttrs": []
+    },
+    "bpmn:ParallelGateway": {
+      "enabled": true,
+      "fields": ["id", "name", "attrs"],
+      "attrOrder": ["description"],
+      "requiredAttrs": []
+    },
+    "bpmn:EndEvent": {
+      "enabled": true,
+      "fields": ["id", "name", "attrs"],
+      "attrOrder": ["description"],
+      "requiredAttrs": []
+    },
+    "bpmn:SequenceFlow": {
+      "enabled": true,
+      "fields": ["id", "name", "attrs"],
+      "attrOrder": ["category", "description"],
+      "requiredAttrs": []
+    },
+    "default": {
+      "enabled": true,
+      "fields": ["id", "name", "attrs"],
+      "attrOrder": [],
+      "requiredAttrs": []
+    }
+  },
+
+  "validation": {
+    "enabled": true,
+    "rules": {
+      "required": {
+        "message": "{label} is required"
+      },
+      "minLength": {
+        "message": "{label} must be at least {value} characters"
+      },
+      "maxLength": {
+        "message": "{label} must be no more than {value} characters"
+      },
+      "pattern": {
+        "message": "{label} format is invalid"
+      }
+    },
+    "showErrors": true,
+    "errorClass": "field-error"
+  },
+
+  "i18n": {
+    "enabled": true,
+    "locale": "zh-CN",
+    "messages": {
+      "save": "保存",
+      "cancel": "取消",
+      "confirm": "确认",
+      "confirmTitle": "提示",
+      "confirmMessage": "是否更新修改",
+      "processMessage": "请选择要编辑的元素",
+      "multiSelectionMessage": "选中多个元素 - 请选中单个元素进行属性编辑",
+      "required": "必填",
+      "invalidFormat": "格式无效"
+    }
+  },
+
+  "performance": {
+    "debounceDelay": 300,
+    "updateThrottle": 100,
+    "renderOptimization": true
+  },
+
+  "extensions": {
+    "customValidators": [],
+    "customRenderers": [],
+    "beforeSave": [],
+    "afterSave": []
+  },
+
+  "debug": {
+    "enabled": false,
+    "logChanges": false,
+    "logRenders": false
+  }
+}

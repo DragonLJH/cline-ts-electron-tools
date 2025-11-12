@@ -69,6 +69,7 @@ const electronAPI: ElectronAPI = {
   sendLanguageUpdate: (state: any) => ipcRenderer.send('language-update', state),
   getInitialLanguageState: () => ipcRenderer.invoke('get-initial-language-state'),
 
+
 };
 
 // 监听状态更新并广播到renderer
@@ -91,6 +92,11 @@ ipcRenderer.on('language-init', (event, state) => {
 ipcRenderer.on('force-set-state', (event, state) => {
   window.postMessage({ type: 'ELECTRON_FORCE_SET_STATE', state }, '*');
 });
+
+ipcRenderer.on("initialize-state", (event, state) => {
+  window.postMessage({ type: 'ELECTRON_INIT_STATE', state }, '*');
+})
+
 
 // 安全地将API暴露给渲染进程
 try {

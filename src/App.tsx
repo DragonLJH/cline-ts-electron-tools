@@ -2,7 +2,6 @@ import React, { useEffect, useRef, forwardRef, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { routes, RouteConfig } from '@/route';
 import { CustomTitleBar } from '@/app-menu';
-import { useAppStore } from '@/store/appStore';
 
 // 递归渲染路由的函数
 const renderRoutes = (routes: RouteConfig[]): React.ReactNode => {
@@ -90,8 +89,6 @@ const App: React.FC = () => {
     const customTitleBarRef = useRef<HTMLDivElement>(null);
     const appContentRef = useRef<HTMLDivElement>(null);
     const [style, setStyle] = useState({})
-    const [initialLoad, setInitialLoad] = useState(true);
-    const { theme, setTheme } = useAppStore();
 
     useEffect(() => {
         if (customTitleBarRef?.current) {
@@ -102,28 +99,6 @@ const App: React.FC = () => {
 
     }, [customTitleBarRef?.current,
     appContentRef?.current])
-
-    // 初始化状态同步和开发服务器配置
-    useEffect(() => {
-        if (initialLoad && window.electronAPI) {
-            const initializeState = async () => {
-                try {
-                    const initialState = await (window.electronAPI as any).getInitialState();
-                    if (initialState) {
-                        setTheme(initialState.theme || 'light');
-                        // 语言会在 CustomTitleBar 中通过 store 处理
-                    }
-
-                } catch (error) {
-                    console.error('Failed to initialize state:', error);
-                }
-                setInitialLoad(false);
-            };
-
-            initializeState();
-        }
-    }, [initialLoad, setTheme]);
-
     return (
         <Router>
             <div className="app flex flex-col h-screen" style={style as React.CSSProperties}>

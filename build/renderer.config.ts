@@ -45,9 +45,11 @@ const renderer: Configuration & { devServer?: any } = {
   ],
   devServer: {
     compress: true,
-    port: 3000,
+    port: 'auto', // 让webpack自动选择可用端口
     historyApiFallback: true, // 支持SPA路由
+    hot: true, // 开启热重载
     open: false, // 不自动打开浏览器
+    host: 'localhost', // 绑定到localhost，避免IPv6问题
   },
 };
 

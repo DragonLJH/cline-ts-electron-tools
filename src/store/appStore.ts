@@ -58,72 +58,24 @@ let isSyncing = false;
 
 // 新窗口直接通过主进程推送状态，不需要自主初始化
 
-// 使用一个effect来确保i18n状态总是跟随store状态
-useAppStore.subscribe((state) => {
-  // 每当store状态改变时，强制同步到i18n
-  const currentI18nLang = LanguageManager.getCurrentLanguage();
-  if (currentI18nLang !== state.language) {
-    console.log(`🔧 i18n跟随store: ${currentI18nLang} → ${state.language}`);
-    LanguageManager.changeLanguage(state.language);
-  }
-});
 
 // 跨窗口同步逻辑
 if (typeof window !== 'undefined' && window.electronAPI) {
-  // 只在主窗口初始化时同步状态到全局
-  if (!window.location.href.includes('?')) {
-    setTimeout(() => {
-      const currentState = useAppStore.getState();
-      window.electronAPI.sendStateUpdate({
-        theme: currentState.theme,
-        count: currentState.count
-      });
-      (window.electronAPI as any).sendLanguageUpdate({
-        language: currentState.language
-      });
-    }, 50);
-  }
 
   // 监听远程更新
   window.addEventListener('message', (event) => {
-    if (event.data.type === 'ELECTRON_STATE_UPDATE') {
-      const { state } = event.data;
-      console.log('📨 接收到远程状态更新:', state);
-      isSyncing = true;
-      useAppStore.setState(state, true);
-      setTimeout(() => { isSyncing = false; }, 0);
-    } else if (event.data.type === 'ELECTRON_LANGUAGE_UPDATE') {
-      const { language } = event.data;
-      console.log('🌐 接收到远程语言更新:', language);
-      isSyncing = true;
-      useAppStore.setState({ language });
-      setTimeout(() => { isSyncing = false; }, 0);
-    } else if (event.data.type === 'ELECTRON_FORCE_SET_STATE') {
-      const fullState = event.data;
-      console.log('🔧 强制设置状态:', JSON.stringify(fullState));
-      isSyncing = true; // 防止subscribe触发
-      useAppStore.setState(fullState);
-      setTimeout(() => { isSyncing = false; }, 0);
+    if (event.data.type === 'ELECTRON_INIT_STATE') {
+      console.log('[ELECTRON_INIT_STATE]', event.data.state);
+      useAppStore.setState(event.data.state);
+      LanguageManager.changeLanguage(event.data.state.language);
     }
   });
 
   // 发送本地状态变化
-  useAppStore.subscribe((state) => {
-    if (!isSyncing) {
-      const appState = { theme: state.theme, count: state.count };
-      window.electronAPI.sendStateUpdate(appState);
-      (window.electronAPI as any).sendLanguageUpdate({ language: state.language });
-    }
+  useAppStore.subscribe((state, prevState) => {
+    console.log('[subscribe]', state, prevState)
+    const { theme, count, language } = state;
+    window.electronAPI.sendStateUpdate({ theme, count, language });
   });
 }
 
-// 向后兼容 - 保留独立的language store，委托给统一store
-export const useLanguageStore = () => {
-  const language = useAppStore((state) => state.language);
-  const setLanguage = useAppStore((state) => state.setLanguage);
-
-  return {
-    language,
-    setLanguage,
-  };
-};

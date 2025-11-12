@@ -4,7 +4,9 @@ import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
 import { spawn } from 'child_process';
 import * as path from 'path';
-import renderer from './renderer.config';
+
+// 导入渲染进程配置
+import rendererConfig from './renderer.config';
 
 const DEV_SERVER_URL = 'http://localhost:3000';
 const ELECTRON_MAIN_PATH = path.resolve(__dirname, '..', '..', 'dist', 'main.js');
@@ -83,21 +85,14 @@ async function runDev(): Promise<void> {
       });
     });
 
-    // 2. 创建渲染进程webpack编译器
-    const rendererCompiler = webpack(renderer);
+    // 2. 创建渲染进程webpack编译器，使用统一的devServer配置
+    const rendererCompiler = webpack(rendererConfig);
     if (!rendererCompiler) {
       throw new Error('无法创建渲染进程编译器');
     }
 
-    // 3. 配置开发服务器选项 - 让webpack自动选择可用端口，使用localhost
-    const devServerOptions = {
-      compress: true,
-      port: 'auto', // 自动选择可用端口
-      historyApiFallback: true,
-      hot: true,
-      open: false,
-      host: 'localhost', // 使用localhost，HMR会自动使用相同的host
-    };
+    // 3. 使用rendererConfig中的devServer配置
+    const devServerOptions = rendererConfig.devServer || {};
 
     // 创建开发服务器
     console.log('🌐 启动webpack开发服务器...');

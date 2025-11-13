@@ -8,8 +8,10 @@ import { createRoot } from 'react-dom/client';
 import { Button } from '@/components/Commom'
 import { Input } from '@/components/Input'
 import { Select } from '@/components/Selection'
-import configJson from './index.json'
 import { BpmnTranslations, LanguageManager } from '@/utils/locales'
+import CustomLoggerModule from '../CustomLoggerService/CustomLoggerService'
+import CustomConfigModule from '../CustomConfigService/CustomConfigService'
+import { CustomLoggerService } from '../CustomLoggerService/CustomLoggerService'
 import type {
     CustomPropertiesPanelConfig,
     Injector,
@@ -23,7 +25,8 @@ import type {
     ElementRegistry,
     Modeling,
     Translate
-} from '../types';
+} from '../../core/types';
+import type { CustomConfigService } from '../CustomConfigService/CustomConfigService';
 
 // 配置类型定义
 interface PropertiesConfig {
@@ -125,6 +128,8 @@ interface PropertiesConfig {
 class CustomPropertiesPanel {
     private _eventBus: EventBus;
     private _injector: Injector;
+    private _customLogger: CustomLoggerService;
+    private _customConfig: CustomConfigService;
     private _layoutConfig: any;
     private _descriptionConfig: any;
     private _tooltipConfig: any;
@@ -132,7 +137,7 @@ class CustomPropertiesPanel {
     private _getFeelPopupLinks: ((id: string) => any[]) | undefined;
     private _container: HTMLElement;
 
-    constructor(config: CustomPropertiesPanelConfig, injector: Injector, eventBus: EventBus) {
+    constructor(config: CustomPropertiesPanelConfig, injector: Injector, eventBus: EventBus, customLogger: CustomLoggerService, customConfig: CustomConfigService) {
         const {
             parent,
             layout: layoutConfig,
@@ -141,9 +146,16 @@ class CustomPropertiesPanel {
             feelPopupContainer,
             getFeelPopupLinks
         } = config || {};
-        console.log('[CustomPropertiesPanel]', { config, injector, eventBus })
         this._eventBus = eventBus;
         this._injector = injector;
+        this._customLogger = customLogger;
+        this._customConfig = customConfig;
+
+        this._customLogger.info('CustomPropertiesPanel constructor called', { config, hasInjector: !!injector, hasEventBus: !!eventBus });
+
+        // 使用自定义日志服务输出初始化信息
+        this._customLogger.info('CustomPropertiesPanel initialized', { config, hasInjector: !!injector, hasEventBus: !!eventBus });
+
         this._layoutConfig = layoutConfig;
         this._descriptionConfig = descriptionConfig;
         this._tooltipConfig = tooltipConfig;
@@ -151,18 +163,21 @@ class CustomPropertiesPanel {
         this._getFeelPopupLinks = getFeelPopupLinks;
         this._container = domify('<div style="height: 100%" tabindex="-1" class="bio-properties-panel-container"></div>');
         eventBus.on('diagram.init', () => {
-            console.log('[CustomPropertiesPanel] diagram.init', parent)
+            this._customLogger.info('diagram.init event fired', { parent });
+            this._customLogger.debug('diagram.init parent element', parent);
             if (parent) {
                 this.attachTo(parent);
             }
         });
         eventBus.on('diagram.destroy', () => {
+            this._customLogger.info('diagram.destroy event fired');
             this.detach();
         });
         eventBus.on('root.added', (event: any) => {
             const {
                 element
             } = event;
+            this._customLogger.debug('root.added event fired', { elementId: element?.id, elementType: element?.type });
             this._render(element);
         });
 
@@ -201,7 +216,7 @@ class CustomPropertiesPanel {
         this.detach();
 
         // (2) append to parent container
-        console.log('[attachTo]', element, this._container)
+        this._customLogger.debug('Attaching properties panel to container', { element, container: this._container });
         element.appendChild(this._container);
 
         // (3) notify interested parties
@@ -231,7 +246,7 @@ class CustomPropertiesPanel {
             priority = 1000;
         }
         if (typeof provider.getGroups !== 'function') {
-            console.error('Properties provider does not implement #getGroups(element) API');
+            this._customLogger.error('Properties provider does not implement #getGroups(element) API');
             return;
         }
         this._eventBus.on('propertiesPanel.getProviders', function (event: any) {
@@ -288,14 +303,14 @@ class CustomPropertiesPanel {
             this._eventBus.fire('propertiesPanel.destroyed');
         }
     }
-    static $inject = ['config.propertiesPanel', 'injector', 'eventBus'];
+    static $inject = ['config.propertiesPanel', 'injector', 'eventBus', 'customLogger', 'customConfig'];
 }
 
 // 导出类
 export { CustomPropertiesPanel };
 
 export default {
-    __depends__: [],
+    __depends__: [CustomLoggerModule, CustomConfigModule],
     __init__: ['propertiesPanel'],
     propertiesPanel: ['type', CustomPropertiesPanel]
 };
@@ -306,6 +321,9 @@ function isImplicitRoot(element: BpmnElement): boolean { return element && (elem
 function findElement(elements: BpmnElement[], element: BpmnElement) { return find(elements, (e: BpmnElement) => e === element); }
 
 function elementExists(element: BpmnElement, elementRegistry: any) { return element && elementRegistry.get(element.id); }
+
+// Static logger instance for React components
+const logger = new CustomLoggerService();
 function BpmnPropertiesPanel(props: BpmnPropertiesPanelProps) {
     const {
         element,
@@ -322,20 +340,21 @@ function BpmnPropertiesPanel(props: BpmnPropertiesPanelProps) {
     const eventBus = injector.get('eventBus') as EventBus;
     const modeling = injector.get('modeling') as Modeling;
     const translate = injector.get('translate') as Translate;
+    const customConfig = injector.get('customConfig') as CustomConfigService;
     const [state, setState] = useState<BpmnPropertiesPanelState>({
         selectedElement: element
     });
     const selectedElement = state.selectedElement;
 
     useEffect(() => {
-        console.log('[BpmnPropertiesPanel]props', props)
+        logger.debug('BpmnPropertiesPanel props', props);
     }, [])
 
     /**
      * @param {djs.model.Base | Array < djs.model.Base >} element
                 */
     const _update = (element: BpmnElement | BpmnElement[]) => {
-        console.log('_update', element)
+        logger.debug('_update called', element);
         if (!element) {
             return;
         }
@@ -362,7 +381,7 @@ function BpmnPropertiesPanel(props: BpmnPropertiesPanelProps) {
     // (2a) selection changed
     useEffect(() => {
         const onSelectionChanged = (e: any) => {
-            console.log('[selection.changed]', e)
+            logger.debug('selection.changed event', e);
             const {
                 newSelection = []
             } = e;
@@ -496,15 +515,15 @@ function BpmnPropertiesPanel(props: BpmnPropertiesPanelProps) {
                 <span>Multiple elements selected - please select a single element to edit properties</span>
             </div>
         ) : (
-            <PanelBox key={state.selectedElement.id} selectedElement={state.selectedElement} modeling={modeling} eventBus={eventBus} />
+            <PanelBox key={state.selectedElement.id} selectedElement={state.selectedElement} modeling={modeling} eventBus={eventBus} customConfig={customConfig} />
         )}
     </div>
 }
 const PanelBox = (props: PanelBoxProps) => {
-    const { selectedElement, modeling, eventBus } = props
+    const { selectedElement, modeling, eventBus, customConfig } = props
 
-    // 获取配置
-    const config = configJson as PropertiesConfig;
+    // 获取配置 - 使用配置服务
+    const config = customConfig?.getConfig() || {};
 
     // 检查元素类型是否启用
     const elementTypeConfig = (config.elementTypes?.[selectedElement.type!]) || config.elementTypes?.default || {
@@ -566,7 +585,7 @@ const PanelBox = (props: PanelBoxProps) => {
                 timeout = setTimeout(() => {
                     modeling.updateProperties(selectedElement, data);
                     if (config.debug.logChanges) {
-                        console.log('[AutoSave]', data);
+                        logger.info('AutoSave applied', data);
                     }
                 }, behaviors.autoSave.delay);
             }
@@ -575,7 +594,7 @@ const PanelBox = (props: PanelBoxProps) => {
 
     useUnmount(() => {
         if (config.debug.enabled) {
-            console.log("卸载时拿到最新的值:", _businessObject, isProcess);
+            logger.debug("Component unmounting with latest values", { businessObject: _businessObject, isProcess });
         }
 
         if (!isProcess && !!record) {
@@ -611,7 +630,7 @@ const PanelBox = (props: PanelBoxProps) => {
         modeling.updateProperties(selectedElement, { ...attrs, name });
 
         if (config.debug.logChanges) {
-            console.log('[ManualSave]', { ...attrs, name });
+            logger.info('ManualSave applied', { ...attrs, name });
         }
     };
 
@@ -710,7 +729,7 @@ const PanelBox = (props: PanelBoxProps) => {
     };
 
     if (config.debug.logRenders) {
-        console.log('[PanelBox Render]', {
+        logger.info('PanelBox Render', {
             elementType: selectedElement.type,
             isProcess,
             displayFields: getDisplayFields(),

@@ -5,7 +5,9 @@
  * Extends the bpmn-js Modeler class with complete TypeScript support.
  */
 import Modeler from 'bpmn-js/lib/Modeler';
-import { initialDiagram } from './xmlStr';
+import { initialDiagram } from '../xmlStr';
+import { CustomLoggerService } from '../../modules/CustomLoggerService/CustomLoggerService';
+import { BpmnError, validateContainer, validateXml, withErrorHandling } from '../../utils/errors';
 
 /**
  * CustomModeler constructor options interface
@@ -53,6 +55,9 @@ export default class CustomModeler extends Modeler {
   /** Initialization options */
   private _options: CustomModelerOptions;
 
+  /** Logger instance */
+  private static _logger: CustomLoggerService = new CustomLoggerService();
+
   /**
    * Constructor
    *
@@ -77,17 +82,7 @@ export default class CustomModeler extends Modeler {
    * @private
    */
   private _validateContainer(container: HTMLElement | string): void {
-    const element = typeof container === 'string'
-      ? document.querySelector(container)
-      : container;
-
-    if (!element) {
-      throw new Error(`Container element not found: ${container}`);
-    }
-
-    if (!(element instanceof HTMLElement)) {
-      throw new Error('Container must be a valid HTMLElement');
-    }
+    validateContainer(container);
   }
 
   /**
@@ -101,7 +96,7 @@ export default class CustomModeler extends Modeler {
       this._initialized = true;
       this._currentXML = xmlToImport;
     } catch (error) {
-      console.error('Failed to initialize CustomModeler:', error);
+      CustomModeler._logger.error('Failed to initialize CustomModeler', error);
       throw error;
     }
   }
@@ -111,20 +106,18 @@ export default class CustomModeler extends Modeler {
    *
    * @param xml BPMN XML string
    * @returns Promise resolving to import result
-   * @throws {Error} When XML is invalid or import fails
+   * @throws {BpmnError} When XML is invalid or import fails
    */
   importXML(xml: string): Promise<ImportResult> {
-    if (!xml || typeof xml !== 'string') {
-      throw new Error('Invalid XML: must be a non-empty string');
-    }
+    validateXml(xml);
 
-    try {
-      this._currentXML = xml;
-      return super.importXML(xml);
-    } catch (error) {
-      console.error('BPMN XML import failed:', error);
-      throw error;
-    }
+    return withErrorHandling(
+      async () => {
+        this._currentXML = xml;
+        return await super.importXML(xml);
+      },
+      (error) => BpmnError.importFailed({ originalError: error })
+    );
   }
 
   /**

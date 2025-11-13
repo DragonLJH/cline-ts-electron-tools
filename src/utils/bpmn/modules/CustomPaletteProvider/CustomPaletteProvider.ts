@@ -1,41 +1,43 @@
 import { assign } from 'min-dash';
 import GlobalConnectModule from 'diagram-js/lib/features/global-connect';
-import type { Injector, EventBus } from '../types';
+import type { Injector, EventBus } from '../../core/types';
+import { CustomLoggerService } from '../CustomLoggerService/CustomLoggerService';
+import CustomLoggerModule from '../CustomLoggerService/CustomLoggerService';
 
 // 自定义调色板类型定义
 interface Palette {
-  registerProvider(provider: any): void;
-  _rebuild(): void;
+    registerProvider(provider: any): void;
+    _rebuild(): void;
 }
 
 interface Create {
-  start(event: any, shape: any): void;
+    start(event: any, shape: any): void;
 }
 
 interface ElementFactory {
-  createShape(options: any): any;
+    createShape(options: any): any;
 }
 
 interface Tool {
-  activateSelection?(event: any): void;
-  start?(event: any): void;
+    activateSelection?(event: any): void;
+    start?(event: any): void;
 }
 
 interface Translate {
-  (key: string, params?: any): string;
+    (key: string, params?: any): string;
 }
 
 interface PaletteEntries {
-  [key: string]: {
-    group?: string;
-    className?: string;
-    title?: string;
-    separator?: boolean;
-    action?: {
-      click?: (event: any) => void;
-      dragstart?: (event: any) => void;
+    [key: string]: {
+        group?: string;
+        className?: string;
+        title?: string;
+        separator?: boolean;
+        action?: {
+            click?: (event: any) => void;
+            dragstart?: (event: any) => void;
+        };
     };
-  };
 }
 
 
@@ -51,6 +53,7 @@ class CustomPaletteProvider {
     private _globalConnect?: Tool;
     private _translate: Translate;
     private _businessCustomOptions: Record<string, any> = {};
+    private _logger: CustomLoggerService;
 
     static $inject = [
         'palette',
@@ -61,7 +64,8 @@ class CustomPaletteProvider {
         'handTool',
         'globalConnect',
         'translate',
-        'eventBus'
+        'eventBus',
+        'customLogger'
     ]
 
     constructor(
@@ -73,7 +77,8 @@ class CustomPaletteProvider {
         handTool: Tool,
         globalConnect: Tool,
         translate: Translate,
-        eventBus: EventBus
+        eventBus: EventBus,
+        customLogger: CustomLoggerService
     ) {
         this._palette = palette;
         this._create = create;
@@ -83,17 +88,19 @@ class CustomPaletteProvider {
         this._handTool = handTool;
         this._globalConnect = globalConnect;
         this._translate = translate;
-        console.log('[CustomPaletteProvider]palette', palette, lassoTool)
+        this._logger = customLogger;
+
+        this._logger.debug('CustomPaletteProvider initialized', { palette, lassoTool });
         palette.registerProvider(this);
         eventBus.on('root.updateBusiness', (e: any) => {
-            console.log('[root.updateBusiness]', e)
-            const { type, ...businessObject } = e
+            this._logger.info('Business update received', e);
+            const { type, ...businessObject } = e;
             this._businessCustomOptions = {
                 ...this._businessCustomOptions,
                 ...businessObject
-            }
-            palette._rebuild()
-        })
+            };
+            palette._rebuild();
+        });
     }
 
     /**
@@ -111,7 +118,7 @@ class CustomPaletteProvider {
             _businessCustomOptions: businessCustomOptions
         } = this;
         const actions = {};
-        function _insetBusiness(set: (key: string, value: any) => void, options: any): void {
+        function _insertBusiness(set: (key: string, value: any) => void, options: any): void {
             const _set = (options: any) => {
                 Object.entries(options).forEach(([key, value]) => {
                     if (Object.prototype.toString.call(value) === '[object Object]') {
@@ -127,8 +134,7 @@ class CustomPaletteProvider {
             const shortType = type.replace(/^bpmn:/, '');
             function createListener(event: any): void {
                 const shape = elementFactory.createShape(assign({ type }, options));
-                _insetBusiness((k, v) => shape.businessObject.set(k, v), businessCustomOptions)
-                console.log('[createListener]shortType', shortType)
+                _insertBusiness((k, v) => shape.businessObject.set(k, v), businessCustomOptions);
                 create.start(event, shape);
             }
 
@@ -185,6 +191,7 @@ class CustomPaletteProvider {
             ),
         });
 
+        this._logger.info('[getPaletteEntries]actions', actions);
         return actions;
     }
 }
@@ -195,6 +202,6 @@ export default {
         'paletteProvider',
     ],
     // __depends__: [GlobalConnectModule, CustomLassoTool],
-    __depends__: [GlobalConnectModule],
+    __depends__: [GlobalConnectModule, CustomLoggerModule],
     paletteProvider: ['type', CustomPaletteProvider]
 };

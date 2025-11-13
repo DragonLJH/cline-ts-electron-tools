@@ -94,6 +94,7 @@ export interface PanelBoxProps {
   selectedElement: BpmnElement;
   modeling: Modeling;
   eventBus: EventBus;
+  customConfig?: any;
 }
 
 // Global declarations for DOM elements

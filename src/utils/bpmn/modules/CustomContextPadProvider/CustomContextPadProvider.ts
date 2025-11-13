@@ -1,5 +1,5 @@
 /**
- * Standalone Context Pad Provider Implementation
+ * Custom Context Pad Provider Implementation
  *
  * This is an independent implementation that manually manages all ContextPadProvider
  * functionality without inheriting from the base class. This approach provides
@@ -8,6 +8,8 @@
 
 import { assign, every, isArray } from 'min-dash';
 import { hasPrimaryModifier } from 'diagram-js/lib/util/Mouse';
+import { CustomLoggerService } from '../CustomLoggerService/CustomLoggerService';
+import CustomLoggerModule from '../CustomLoggerService/CustomLoggerService';
 
 // Type definitions for better type safety
 export interface ContextPadEntry {
@@ -48,12 +50,12 @@ function includes<T>(array: T[], item: T): boolean {
 }
 
 /**
- * Standalone Context Pad Provider
+ * Custom Context Pad Provider
  *
  * Complete custom implementation without inheritance, offering full control
  * over context menu behavior and appearance.
  */
-export class StandaloneContextPadProvider {
+export class CustomContextPadProvider {
   private _contextPad: any;
   private _modeling: any;
   private _elementFactory: any;
@@ -67,6 +69,7 @@ export class StandaloneContextPadProvider {
   private _appendPreview: any;
   private _autoPlace: any;
   private _businessCustomOptions: BusinessOptions = {};
+  private _logger: CustomLoggerService;
 
   /** Dependency injection array for bpmn-js module system */
   public static $inject: string[] = [
@@ -82,7 +85,8 @@ export class StandaloneContextPadProvider {
     'canvas',
     'rules',
     'translate',
-    'appendPreview'
+    'appendPreview',
+    'customLogger'
   ];
 
   constructor(
@@ -98,7 +102,8 @@ export class StandaloneContextPadProvider {
     canvas: any,
     rules: any,
     translate: (key: string, options?: Record<string, any>) => string,
-    appendPreview: any
+    appendPreview: any,
+    customLogger: CustomLoggerService
   ) {
     config = config || {};
 
@@ -117,14 +122,15 @@ export class StandaloneContextPadProvider {
     this._translate = translate;
     this._eventBus = eventBus;
     this._appendPreview = appendPreview;
+    this._logger = customLogger;
 
     // Configure auto-place
     if (config.autoPlace !== false) {
       this._autoPlace = injector.get('autoPlace', false);
     }
 
-    console.log('[StandaloneContextPadProvider] Initialized with full control');
-    console.log('ContextPad:', contextPad, 'AutoPlace:', this._autoPlace, 'PopupMenu:', popupMenu);
+    this._logger.info('CustomContextPadProvider initialized with full control');
+    this._logger.debug('ContextPad configuration', { contextPad, autoPlace: this._autoPlace, popupMenu });
 
     // Handle create.end event for enhanced UX
     eventBus.on('create.end', 250, (event: any) => {
@@ -143,7 +149,7 @@ export class StandaloneContextPadProvider {
 
     // Listen for business configuration updates
     eventBus.on('root.updateBusiness', (eventDetail: any) => {
-      console.log('[StandaloneProvider] Business update received:', eventDetail);
+      this._logger.info('Business update received', eventDetail);
       const { type, ...businessObject } = eventDetail;
       this._businessCustomOptions = {
         ...this._businessCustomOptions,
@@ -370,4 +376,8 @@ export class StandaloneContextPadProvider {
 }
 
 // Export as default module for bpmn-js integration
-export default StandaloneContextPadProvider;
+export default {
+    __init__: ['contextPadProvider'],
+    __depends__: [CustomLoggerModule],
+    contextPadProvider: ['type', CustomContextPadProvider]
+};

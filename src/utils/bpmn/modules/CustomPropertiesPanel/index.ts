@@ -17,7 +17,7 @@ export type {
     BpmnElement,
     BpmnPropertiesPanelProps,
     PanelBoxProps
-} from '../types';
+} from '../../core/types';
 
 // 其他兼容性接口（如果需要）
 export interface PropertiesPanelConfig {

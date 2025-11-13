@@ -1,3 +1,5 @@
+import { DEFAULT_BPMN_CONFIG, VERSION_INFO, FEATURES as FEATURES_LIST } from './utils/constants';
+
 // =============================================================================
 // BPMN集成模块统一导出文件
 // 提供完整的BPMN建模功能集成解决方案
@@ -28,17 +30,17 @@ export type {
     PanelBoxProps,
 
     // 调色板提供者类型 - 只有必要的，内部接口不需要暴露
-} from './types';
+} from './core/types';
 
 // =============================================================================
 // 核心组件导出
 // =============================================================================
 
 // 1. 自定义建模器 - BPMN的核心接口
-export { default as CustomModeler } from './CustomModeler';
+export { default as CustomModeler } from './core/CustomModeler/CustomModeler';
 
 // 2. XML字符串工具 - XML格式支持
-export { initialDiagram } from './xmlStr';
+export { initialDiagram } from './core/xmlStr';
 
 // =============================================================================
 // 定制功能模块导出
@@ -48,46 +50,42 @@ export { initialDiagram } from './xmlStr';
 import CustomPropertiesPanelModule, {
     CustomPropertiesPanelRenderer,
     propertiesPanelModule
-} from './CustomPropertiesPanel';
+} from './modules/CustomPropertiesPanel';
 
 import {
-    contextPadProviderModule,
-    StandaloneContextPadProvider,
-    InheritedContextPadProvider,
-} from './CustomContextPadProvider';
+    contextPadProviderModule
+} from './modules/CustomContextPadProvider';
 
 // 3. 属性面板模块 - BPMN元素属性编辑
 export {
     default as CustomPropertiesPanelModule,
     CustomPropertiesPanelRenderer,
     propertiesPanelModule
-} from './CustomPropertiesPanel';
+} from './modules/CustomPropertiesPanel';
 
 // 属性面板类型导出
 export type {
     PropertiesPanelConfig
-} from './CustomPropertiesPanel';
+} from './modules/CustomPropertiesPanel';
 
 // 4. 右键菜单模块 - 上下文操作
 export {
-    contextPadProviderModule,
-    StandaloneContextPadProvider,
-    InheritedContextPadProvider,
-} from './CustomContextPadProvider';
+    contextPadProviderModule
+} from './modules/CustomContextPadProvider';
 
 // 上下文中菜单相关类型
 export type {
     ContextPadEntry,
     ContextPadEntries,
     ContextPadConfig,
-} from './CustomContextPadProvider';
+} from './modules/CustomContextPadProvider';
 
-import paletteProviderModule from './CustomPaletteProvider';
+import paletteProviderModule from './modules/CustomPaletteProvider';
 
 // 5. 调色板提供者模块 - 元素选择和创建工具
 export {
     default as paletteProviderModule,
-} from './CustomPaletteProvider';
+} from './modules/CustomPaletteProvider';
 
 // =============================================================================
 // 便捷导入 - 常用组合
@@ -115,13 +113,7 @@ export const minimalBpmnModules = [
  * 完整BPMN配置对象示例
  */
 export const defaultBpmnConfig = {
-    container: null, // 需要在运行时设置DOM元素
-    propertiesPanel: {
-        parent: null // 需要在运行时设置DOM元素
-    },
-    keyboard: {
-        bindTo: document // 键盘事件绑定到文档
-    },
+    ...DEFAULT_BPMN_CONFIG,
     additionalModules: standardBpmnModules
 };
 
@@ -129,26 +121,8 @@ export const defaultBpmnConfig = {
 // 版本信息和元数据
 // =============================================================================
 
-/**
- * BPMN集成版本信息
- */
-export const VERSION = '1.0.0';
-
-/**
- * 支持的BPMN-JS版本
- */
-export const SUPPORTED_BPMN_JS_VERSION = '>=13.0.0';
-
-/**
- * 模块功能说明
- */
-export const FEATURES = [
-    'CustomModeler - 扩展BPMN建模器',
-    'CustomPropertiesPanel - React属性面板',
-    'CustomContextPadProvider - 右键上下文菜单',
-    'CustomPaletteProvider - 工具调色板',
-    'Type-safe interfaces - TypeScript类型安全'
-] as const;
+export const { VERSION, SUPPORTED_BPMN_JS_VERSION } = VERSION_INFO;
+export const FEATURES = FEATURES_LIST;
 
 // =============================================================================
 // 向后兼容性导出
@@ -167,4 +141,4 @@ export type {
     Injector as BpmnInjector,
     EventBus as BpmnEventBus,
     Canvas as BpmnCanvas,
-} from './types';
+} from './core/types';

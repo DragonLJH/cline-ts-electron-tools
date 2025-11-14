@@ -10,6 +10,8 @@ import { assign, every, isArray } from 'min-dash';
 import { hasPrimaryModifier } from 'diagram-js/lib/util/Mouse';
 import { CustomLoggerService } from '../CustomLoggerService/CustomLoggerService';
 import CustomLoggerModule from '../CustomLoggerService/CustomLoggerService';
+import BpmnElementFactoryModule from '../../utils/bpmnElementFactory';
+import type { BusinessOptions, BpmnElementFactory } from '../../utils/bpmnElementFactory';
 
 // Type definitions for better type safety
 export interface ContextPadEntry {
@@ -38,9 +40,7 @@ export interface Element {
   [key: string]: any;
 }
 
-export interface BusinessOptions {
-  [key: string]: any;
-}
+
 
 /**
  * Utility function to check if array includes element
@@ -70,6 +70,7 @@ export class CustomContextPadProvider {
   private _autoPlace: any;
   private _businessCustomOptions: BusinessOptions = {};
   private _logger: CustomLoggerService;
+  private _bpmnElementFactory: BpmnElementFactory;
 
   /** Dependency injection array for bpmn-js module system */
   public static $inject: string[] = [
@@ -86,7 +87,8 @@ export class CustomContextPadProvider {
     'rules',
     'translate',
     'appendPreview',
-    'customLogger'
+    'customLogger',
+    'bpmnElementFactory'
   ];
 
   constructor(
@@ -103,7 +105,8 @@ export class CustomContextPadProvider {
     rules: any,
     translate: (key: string, options?: Record<string, any>) => string,
     appendPreview: any,
-    customLogger: CustomLoggerService
+    customLogger: CustomLoggerService,
+    bpmnElementFactory: BpmnElementFactory
   ) {
     config = config || {};
 
@@ -123,6 +126,7 @@ export class CustomContextPadProvider {
     this._eventBus = eventBus;
     this._appendPreview = appendPreview;
     this._logger = customLogger;
+    this._bpmnElementFactory = bpmnElementFactory;
 
     // Configure auto-place
     if (config.autoPlace !== false) {
@@ -224,18 +228,7 @@ export class CustomContextPadProvider {
       this._connect.start(event, element);
     };
 
-    const insertBusinessOptions = (setFn: (key: string, value: any) => void, options: BusinessOptions) => {
-      const setOptionsRecursively = (options: BusinessOptions) => {
-        Object.entries(options).forEach(([key, value]) => {
-          if (Object.prototype.toString.call(value) === '[object Object]') {
-            setOptionsRecursively(value);
-          } else {
-            setFn(key, value);
-          }
-        });
-      };
-      setOptionsRecursively(options);
-    };
+
 
     // Generate append actions for different BPMN element types
     const appendAction = (
@@ -244,51 +237,13 @@ export class CustomContextPadProvider {
       title?: string,
       options?: any
     ): ContextPadEntry => {
-      const shortType = type.replace(/^bpmn:/, '');
-
-      if (typeof title !== 'string') {
-        options = title;
-        title = this._translate('Append {type}', { type: shortType });
-      }
-
-      const appendStart = (event: any, element: Element) => {
-        const shape = this._elementFactory.createShape(assign({ type }, options));
-
-        // Apply business options if they exist
-        if (this._businessCustomOptions && Object.keys(this._businessCustomOptions).length > 0) {
-          insertBusinessOptions((key: string, value: any) => shape.businessObject.set(key, value), this._businessCustomOptions);
-        }
-
-        this._create.start(event, shape, { source: element });
-        this._appendPreview.cleanUp();
-      };
-
-      const appendAuto = this._autoPlace ? (_event: any, element: Element) => {
-        const shape = this._elementFactory.createShape(assign({ type }, options));
-
-        if (this._businessCustomOptions && Object.keys(this._businessCustomOptions).length > 0) {
-          insertBusinessOptions((key: string, value: any) => shape.businessObject.set(key, value), this._businessCustomOptions);
-        }
-
-        this._autoPlace.append(element, shape);
-        this._appendPreview.cleanUp();
-      } : appendStart;
-
-      const previewAppend = this._autoPlace ? (_event: any, element: Element) => {
-        this._appendPreview.create(element, type, options);
-        return () => this._appendPreview.cleanUp();
-      } : undefined;
-
-      return {
-        group: 'model',
-        className: className,
-        title: title!,
-        action: {
-          dragstart: appendStart,
-          click: appendAuto,
-          hover: previewAppend
-        }
-      };
+      return this._bpmnElementFactory.createContextPadAction(
+        type,
+        className,
+        title,
+        options,
+        this._businessCustomOptions
+      );
     };
 
     // Define standard actions available for all elements
@@ -378,6 +333,6 @@ export class CustomContextPadProvider {
 // Export as default module for bpmn-js integration
 export default {
     __init__: ['contextPadProvider'],
-    __depends__: [CustomLoggerModule],
+    __depends__: [CustomLoggerModule, BpmnElementFactoryModule],
     contextPadProvider: ['type', CustomContextPadProvider]
 };

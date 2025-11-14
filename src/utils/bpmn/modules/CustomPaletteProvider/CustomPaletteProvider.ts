@@ -3,6 +3,8 @@ import GlobalConnectModule from 'diagram-js/lib/features/global-connect';
 import type { Injector, EventBus } from '../../core/types';
 import { CustomLoggerService } from '../CustomLoggerService/CustomLoggerService';
 import CustomLoggerModule from '../CustomLoggerService/CustomLoggerService';
+import BpmnElementFactoryModule from '../../utils/bpmnElementFactory';
+import type { BusinessOptions, BpmnElementFactory } from '../../utils/bpmnElementFactory';
 
 // 自定义调色板类型定义
 interface Palette {
@@ -43,6 +45,8 @@ interface PaletteEntries {
 
 
 
+
+
 class CustomPaletteProvider {
     private _palette: Palette;
     private _create: Create;
@@ -52,8 +56,9 @@ class CustomPaletteProvider {
     private _handTool?: Tool;
     private _globalConnect?: Tool;
     private _translate: Translate;
-    private _businessCustomOptions: Record<string, any> = {};
+    private _businessCustomOptions: BusinessOptions = {};
     private _logger: CustomLoggerService;
+    private _bpmnElementFactory: BpmnElementFactory;
 
     static $inject = [
         'palette',
@@ -65,7 +70,8 @@ class CustomPaletteProvider {
         'globalConnect',
         'translate',
         'eventBus',
-        'customLogger'
+        'customLogger',
+        'bpmnElementFactory'
     ]
 
     constructor(
@@ -78,7 +84,8 @@ class CustomPaletteProvider {
         globalConnect: Tool,
         translate: Translate,
         eventBus: EventBus,
-        customLogger: CustomLoggerService
+        customLogger: CustomLoggerService,
+        bpmnElementFactory: BpmnElementFactory
     ) {
         this._palette = palette;
         this._create = create;
@@ -89,6 +96,7 @@ class CustomPaletteProvider {
         this._globalConnect = globalConnect;
         this._translate = translate;
         this._logger = customLogger;
+        this._bpmnElementFactory = bpmnElementFactory;
 
         this._logger.debug('CustomPaletteProvider initialized', { palette, lassoTool });
         palette.registerProvider(this);
@@ -118,37 +126,17 @@ class CustomPaletteProvider {
             _businessCustomOptions: businessCustomOptions
         } = this;
         const actions = {};
-        function _insertBusiness(set: (key: string, value: any) => void, options: any): void {
-            const _set = (options: any) => {
-                Object.entries(options).forEach(([key, value]) => {
-                    if (Object.prototype.toString.call(value) === '[object Object]') {
-                        _set(value)
-                    } else {
-                        set(key, value)
-                    }
-                })
-            }
-            _set(options)
-        }
-        function createAction(type: string, group: string, className: string, title?: string, options?: any) {
-            const shortType = type.replace(/^bpmn:/, '');
-            function createListener(event: any): void {
-                const shape = elementFactory.createShape(assign({ type }, options));
-                _insertBusiness((k, v) => shape.businessObject.set(k, v), businessCustomOptions);
-                create.start(event, shape);
-            }
 
-
-            return {
+        const createAction = (type: string, group: string, className: string, title?: string, options?: any) => {
+            return this._bpmnElementFactory.createPaletteAction(
+                type,
                 group,
                 className,
-                title: title || translate('Create {type}', { type: shortType }),
-                action: {
-                    dragstart: createListener,
-                    click: createListener
-                }
-            };
-        }
+                title,
+                options,
+                businessCustomOptions
+            );
+        };
         assign(actions, {
             'lasso-tool': {
                 group: 'tools',
@@ -202,6 +190,6 @@ export default {
         'paletteProvider',
     ],
     // __depends__: [GlobalConnectModule, CustomLassoTool],
-    __depends__: [GlobalConnectModule, CustomLoggerModule],
+    __depends__: [GlobalConnectModule, CustomLoggerModule, BpmnElementFactoryModule],
     paletteProvider: ['type', CustomPaletteProvider]
 };

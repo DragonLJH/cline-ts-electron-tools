@@ -10,6 +10,8 @@ import { assign, every, isArray } from 'min-dash';
 import { hasPrimaryModifier } from 'diagram-js/lib/util/Mouse';
 import { CustomLoggerService } from '../CustomLoggerService/CustomLoggerService';
 import CustomLoggerModule from '../CustomLoggerService/CustomLoggerService';
+import { CustomPopupMenuProvider } from '../CustomPopupMenuProvider/CustomPopupMenuProvider';
+import CustomPopupMenuModule from '../CustomPopupMenuProvider/CustomPopupMenuProvider';
 import BpmnElementFactoryModule from '../../utils/bpmnElementFactory';
 import type { BusinessOptions, BpmnElementFactory } from '../../utils/bpmnElementFactory';
 
@@ -161,6 +163,24 @@ export class CustomContextPadProvider {
       };
       // Refresh the context pad to show updated entries
       contextPad._init();
+    });
+
+    // Register custom popup menu provider with the popup menu
+    if (popupMenu) {
+      popupMenu.registerProvider('custom-popup-menu', this._createPopupMenuProvider());
+      this._logger.info('Custom popup menu provider registered');
+    }
+
+    // Handle right-click context menu for elements
+    eventBus.on('element.contextmenu', (event: any) => {
+      const { element, originalEvent } = event;
+
+      // Prevent default browser context menu
+      originalEvent.preventDefault();
+      originalEvent.stopPropagation();
+
+      // Show custom popup menu
+      this._showPopupMenu(element, originalEvent);
     });
   }
 
@@ -328,11 +348,43 @@ export class CustomContextPadProvider {
       ? actionsFilter(elementActionMap[elementType], allActions)
       : allActions;
   }
+
+  /**
+   * Create a popup menu provider instance
+   * @returns Custom popup menu provider instance
+   */
+  private _createPopupMenuProvider(): CustomPopupMenuProvider {
+    return new CustomPopupMenuProvider(this._logger, this._bpmnElementFactory);
+  }
+
+  /**
+   * Show popup menu for the given element at the specified position
+   * @param element - The element to show popup menu for
+   * @param event - The mouse event that triggered the popup
+   */
+  private _showPopupMenu(element: Element, event: MouseEvent): void {
+    if (!this._popupMenu) {
+      this._logger.warn('Popup menu not available');
+      return;
+    }
+
+    const position = {
+      x: event.clientX,
+      y: event.clientY
+    };
+
+    try {
+      this._popupMenu.open(element, 'custom-popup-menu', position);
+      this._logger.debug('Popup menu opened for element', { elementId: element.id, position });
+    } catch (error) {
+      this._logger.error('Failed to open popup menu', error);
+    }
+  }
 }
 
 // Export as default module for bpmn-js integration
 export default {
     __init__: ['contextPadProvider'],
-    __depends__: [CustomLoggerModule, BpmnElementFactoryModule],
+    __depends__: [CustomLoggerModule, BpmnElementFactoryModule, CustomPopupMenuModule],
     contextPadProvider: ['type', CustomContextPadProvider]
 };

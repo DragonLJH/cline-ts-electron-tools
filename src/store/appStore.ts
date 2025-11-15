@@ -54,10 +54,7 @@ export const useAppStore = create<UnifiedState>((set, get) => ({
 }));
 
 // 同步标志，避免循环同步
-let isSyncing = false;
-
-// 新窗口直接通过主进程推送状态，不需要自主初始化
-
+let isReceivingRemoteUpdate = false;
 
 // 跨窗口同步逻辑
 if (typeof window !== 'undefined' && window.electronAPI) {
@@ -66,16 +63,29 @@ if (typeof window !== 'undefined' && window.electronAPI) {
   window.addEventListener('message', (event) => {
     if (event.data.type === 'ELECTRON_INIT_STATE') {
       console.log('[ELECTRON_INIT_STATE]', event.data.state);
+      isReceivingRemoteUpdate = true;
       useAppStore.setState(event.data.state);
       LanguageManager.changeLanguage(event.data.state.language);
+      isReceivingRemoteUpdate = false;
+    }
+    if (event.data.type === 'ELECTRON_STATE_UPDATE') {
+      console.log('[ELECTRON_STATE_UPDATE]', event.data.state);
+      isReceivingRemoteUpdate = true;
+      useAppStore.setState(event.data.state);
+      LanguageManager.changeLanguage(event.data.state.language);
+      isReceivingRemoteUpdate = false;
     }
   });
 
   // 发送本地状态变化
   useAppStore.subscribe((state, prevState) => {
-    console.log('[subscribe]', state, prevState)
-    const { theme, count, language } = state;
-    window.electronAPI.sendStateUpdate({ theme, count, language });
+    // 只有当不是接收远程更新时才发送状态更新，避免循环同步
+    if (!isReceivingRemoteUpdate) {
+      console.log('[subscribe] 发送本地状态更新', state, prevState);
+      const { theme, count, language } = state;
+      window.electronAPI.sendStateUpdate({ theme, count, language });
+    } else {
+      console.log('[subscribe] 跳过远程状态更新', state, prevState);
+    }
   });
 }
-

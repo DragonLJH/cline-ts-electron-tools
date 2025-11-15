@@ -713,7 +713,7 @@ const PanelBox = (props: PanelBoxProps) => {
     };
 
     // 获取排序后的属性列表
-    const getSortedAttrs = () => {
+    const getSortedAttrs = useCallback(() => {
         const attrOrder = elementTypeConfig.attrOrder || [];
         const existingAttrs = Object.keys(_businessObject.$attrs || {});
         const sortedAttrs = [...attrOrder];
@@ -725,8 +725,11 @@ const PanelBox = (props: PanelBoxProps) => {
             }
         });
 
-        return sortedAttrs.filter(attr => config.fields.attrs.properties[attr]?.enabled !== false);
-    };
+        // 安全检查：确保 config.fields.attrs.properties 存在
+        const properties = config.fields?.attrs?.properties || {};
+
+        return sortedAttrs.filter(attr => properties[attr]?.enabled !== false);
+    },[_businessObject]);
 
     if (config.debug.logRenders) {
         logger.info('PanelBox Render', {
@@ -753,12 +756,39 @@ const PanelBox = (props: PanelBoxProps) => {
                             case 'attrs':
                                 // 渲染属性字段
                                 return getSortedAttrs().map(attrKey => {
-                                    const attrConfig = config.fields.attrs.properties[attrKey] ||
+                                    // 安全检查：确保 config.fields.attrs.properties 存在
+                                    const properties = config.fields?.attrs?.properties || {};
+                                    const attrConfig = properties[attrKey] ||
                                         { type: 'text', enabled: true, label: attrKey };
+
+                                    // 确保属性值是字符串，智能处理对象类型
+                                    const attrValue = _businessObject.$attrs?.[attrKey];
+                                    let displayValue = "";
+
+                                    if (attrValue === null || attrValue === undefined) {
+                                        displayValue = "";
+                                    } else if (typeof attrValue === 'string') {
+                                        displayValue = attrValue;
+                                    } else if (typeof attrValue === 'object') {
+                                        // 对于对象类型，尝试提取有意义的显示值
+                                        if (attrValue.name) {
+                                            displayValue = attrValue.name;
+                                        } else if (attrValue.id) {
+                                            displayValue = attrValue.id;
+                                        } else if (attrValue.value) {
+                                            displayValue = attrValue.value;
+                                        } else {
+                                            // 如果没有有意义的字段，显示类型信息
+                                            displayValue = `[${attrValue.constructor?.name || 'Object'}]`;
+                                        }
+                                    } else {
+                                        displayValue = String(attrValue);
+                                    }
+
                                     return renderField(
                                         attrKey,
                                         attrConfig,
-                                        _businessObject.$attrs[attrKey] || "",
+                                        displayValue,
                                         (value) => updateAttr(attrKey, value)
                                     );
                                 });

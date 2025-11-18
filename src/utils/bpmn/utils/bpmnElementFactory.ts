@@ -1,4 +1,7 @@
 import { assign } from 'min-dash';
+import CustomLoggerModule from '../modules/CustomLoggerService/CustomLoggerService'
+
+import type { CustomLoggerService } from '../modules/CustomLoggerService/CustomLoggerService'
 
 export interface BusinessOptions {
   [key: string]: any;
@@ -35,11 +38,13 @@ export class BpmnElementFactory {
   private _translate: (key: string, options?: Record<string, any>) => string;
   private _autoPlace?: any;
   private _appendPreview?: any;
+  private _logger: CustomLoggerService
 
   static $inject = [
     'elementFactory',
     'create',
     'translate',
+    'customLogger',
     'autoPlace',
     'appendPreview'
   ];
@@ -48,14 +53,21 @@ export class BpmnElementFactory {
     elementFactory: any,
     create: any,
     translate: (key: string, options?: Record<string, any>) => string,
+    customLogger: CustomLoggerService,
     autoPlace?: any,
-    appendPreview?: any
+    appendPreview?: any,
   ) {
     this._elementFactory = elementFactory;
     this._create = create;
     this._translate = translate;
     this._autoPlace = autoPlace;
     this._appendPreview = appendPreview;
+    this._logger = customLogger;
+
+    this._logger.info('BpmnElementFactory initialized successfully', {
+      hasAutoPlace: !!this._autoPlace,
+      hasAppendPreview: !!this._appendPreview
+    });
   }
 
   /**
@@ -64,16 +76,32 @@ export class BpmnElementFactory {
    * @param options - Business options to apply
    */
   private insertBusinessOptions(setFn: (key: string, value: any) => void, options: BusinessOptions) {
-    const setOptionsRecursively = (options: BusinessOptions) => {
+    this._logger.info('Starting business options insertion', { optionCount: Object.keys(options).length });
+
+    const setOptionsRecursively = (options: BusinessOptions, depth: number = 0) => {
+      this._logger.info('Processing options at depth', { depth, keys: Object.keys(options) });
+
       Object.entries(options).forEach(([key, value]) => {
         if (Object.prototype.toString.call(value) === '[object Object]') {
-          setOptionsRecursively(value);
+          this._logger.info('Processing nested object', { key, nestedKeys: Object.keys(value) });
+          setOptionsRecursively(value, depth + 1);
         } else {
-          setFn(key, value);
+          try {
+            setFn(key, value);
+            this._logger.info('Business option set successfully', { key, valueType: typeof value });
+          } catch (error) {
+            this._logger.error('Failed to set business option', { key, value, depth, error: error instanceof Error ? error.message : String(error) });
+          }
         }
       });
     };
-    setOptionsRecursively(options);
+
+    try {
+      setOptionsRecursively(options);
+      this._logger.info('Business options insertion completed');
+    } catch (error) {
+      this._logger.error('Business options insertion failed', { error: error instanceof Error ? error.message : String(error) });
+    }
   }
 
   /**
@@ -84,14 +112,27 @@ export class BpmnElementFactory {
    * @returns The created shape with business options applied
    */
   createBpmnElement(type: string, options?: any, businessOptions?: BusinessOptions) {
-    const shape = this._elementFactory.createShape(assign({ type }, options));
+    try {
+      const shape = this._elementFactory.createShape(assign({ type }, options));
+      this._logger.info('BPMN element created', {
+        type,
+        hasBusinessOptions: !!(businessOptions && Object.keys(businessOptions).length > 0)
+      });
 
-    // Apply business options if they exist
-    if (businessOptions && Object.keys(businessOptions).length > 0) {
-      this.insertBusinessOptions((key: string, value: any) => shape.businessObject.set(key, value), businessOptions);
+      // Apply business options if they exist
+      if (businessOptions && Object.keys(businessOptions).length > 0) {
+        this.insertBusinessOptions((key: string, value: any) => shape.businessObject.set(key, value), businessOptions);
+      }
+
+      return shape;
+    } catch (error) {
+      this._logger.error('Failed to create BPMN element', {
+        type,
+        options,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
     }
-
-    return shape;
   }
 
   /**
@@ -112,21 +153,32 @@ export class BpmnElementFactory {
     options?: any,
     businessOptions?: BusinessOptions
   ): ActionEntry {
-    const shortType = type.replace(/^bpmn:/, '');
-    const createListener = (event: any) => {
-      const shape = this.createBpmnElement(type, options, businessOptions);
-      this._create.start(event, shape);
-    };
+    try {
+      const shortType = type.replace(/^bpmn:/, '');
+      const createListener = (event: any) => {
+        const shape = this.createBpmnElement(type, options, businessOptions);
+        this._create.start(event, shape);
+      };
 
-    return {
-      group,
-      className,
-      title: title || this._translate('Create {type}', { type: shortType }),
-      action: {
-        dragstart: createListener,
-        click: createListener
-      }
-    };
+      this._logger.info('Palette action created', { type, group, className, title });
+
+      return {
+        group,
+        className: `${className} w-8 h-8`,
+        title: title || this._translate('Create {type}', { type: shortType }),
+        action: {
+          dragstart: createListener,
+          click: createListener
+        }
+      };
+    } catch (error) {
+      this._logger.error('Failed to create palette action', {
+        type,
+        group,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }
 
   /**
@@ -147,45 +199,133 @@ export class BpmnElementFactory {
     businessOptions?: BusinessOptions,
     sourceElement?: any
   ): ContextPadEntry {
-    const shortType = type.replace(/^bpmn:/, '');
+    try {
+      const shortType = type.replace(/^bpmn:/, '');
 
-    if (typeof title !== 'string') {
-      options = title;
-      title = this._translate('Append {type}', { type: shortType });
-    }
-
-    const appendStart = (event: any, element: any) => {
-      const shape = this.createBpmnElement(type, options, businessOptions);
-      this._create.start(event, shape, { source: element });
-      this._appendPreview?.cleanUp();
-    };
-
-    const appendAuto = this._autoPlace ? (event: any, element: any) => {
-      const shape = this.createBpmnElement(type, options, businessOptions);
-      this._autoPlace.append(element, shape);
-      this._appendPreview?.cleanUp();
-    } : appendStart;
-
-    const previewAppend = this._autoPlace ? (event: any, element: any) => {
-      this._appendPreview?.create(element, type, options);
-      return () => this._appendPreview?.cleanUp();
-    } : undefined;
-
-    return {
-      group: 'model',
-      className: className,
-      title: title!,
-      action: {
-        dragstart: appendStart,
-        click: appendAuto,
-        hover: previewAppend
+      if (typeof title !== 'string') {
+        this._logger.info('Title parameter is not string, using options as title source', {
+          titleType: typeof title,
+          hasOptions: !!options
+        });
+        options = title;
+        title = this._translate('Append {type}', { type: shortType });
+      } else {
+        this._logger.info('Using provided title', { title });
       }
-    };
+
+      // 记录翻译调用
+      try {
+        const translatedTitle = this._translate('Append {type}', { type: shortType });
+        this._logger.info('Translation successful', { key: 'Append {type}', type: shortType, result: translatedTitle });
+      } catch (error) {
+        this._logger.error('Translation failed', {
+          key: 'Append {type}',
+          type: shortType,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+
+      const appendStart = (event: any, element: any) => {
+        const startTime = Date.now();
+        try {
+          this._logger.info('Starting element append operation', {
+            type,
+            sourceElementId: element?.id,
+            hasAutoPlace: !!this._autoPlace,
+            hasAppendPreview: !!this._appendPreview
+          });
+
+          const shape = this.createBpmnElement(type, options, businessOptions);
+          this._create.start(event, shape, { source: element });
+
+          if (this._appendPreview) {
+            this._appendPreview.cleanUp();
+            this._logger.info('Append preview cleaned up');
+          }
+
+          const duration = Date.now() - startTime;
+          this._logger.info('Element append completed successfully', { type, duration: `${duration}ms` });
+        } catch (error) {
+          const duration = Date.now() - startTime;
+          this._logger.error('Element append failed', {
+            type,
+            sourceElementId: element?.id,
+            duration: `${duration}ms`,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      };
+
+      const appendAuto = this._autoPlace ? (event: any, element: any) => {
+        const startTime = Date.now();
+        try {
+          this._logger.info('Starting auto-place append operation', { type, sourceElementId: element?.id });
+
+          const shape = this.createBpmnElement(type, options, businessOptions);
+          this._autoPlace.append(element, shape);
+
+          if (this._appendPreview) {
+            this._appendPreview.cleanUp();
+            this._logger.info('Append preview cleaned up after auto-place');
+          }
+
+          const duration = Date.now() - startTime;
+          this._logger.info('Auto-place append completed', { type, duration: `${duration}ms` });
+        } catch (error) {
+          const duration = Date.now() - startTime;
+          this._logger.error('Auto-place append failed', {
+            type,
+            sourceElementId: element?.id,
+            duration: `${duration}ms`,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      } : appendStart;
+
+      const previewAppend = this._autoPlace ? (event: any, element: any) => {
+        try {
+          this._logger.info('Creating append preview', { type, elementId: element?.id });
+          this._appendPreview?.create(element, type, options);
+
+          return () => {
+            this._logger.info('Cleaning up append preview', { type, elementId: element?.id });
+            this._appendPreview?.cleanUp();
+          };
+        } catch (error) {
+          this._logger.error('Preview append operation failed', {
+            type,
+            elementId: element?.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          return undefined;
+        }
+      } : undefined;
+
+      this._logger.info('Context pad action created', { type, className, title });
+
+      return {
+        group: 'model',
+        className: `${className} w-8 h-8`,
+        title: title!,
+        action: {
+          dragstart: appendStart,
+          click: appendAuto,
+          hover: previewAppend
+        }
+      };
+    } catch (error) {
+      this._logger.error('Failed to create context pad action', {
+        type,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }
 }
 
 // Export as default module for bpmn-js integration
 export default {
   __init__: ['bpmnElementFactory'],
+  __depends__: [CustomLoggerModule],
   bpmnElementFactory: ['type', BpmnElementFactory]
 };

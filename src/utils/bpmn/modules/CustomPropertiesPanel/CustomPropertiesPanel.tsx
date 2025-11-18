@@ -639,6 +639,7 @@ const PanelBox = (props: PanelBoxProps) => {
     }, [_businessObject]);
 
     const saveChanges = () => {
+        setRecord(null)
         const {
             $attrs: attrs,
             $type: type,
@@ -683,10 +684,7 @@ const PanelBox = (props: PanelBoxProps) => {
         return (
             <div key={fieldKey} className={`space-y-2 flex items-center gap-[10px] ${fieldClass}`}>
                 <label className='block text-sm font-medium text-gray-700'>{getMessage(label)}</label>
-                {renderInputComponent(fieldConfig, value, (e) => {
-                    console.log('renderInputComponent', fieldKey, value)
-                    onChange(e.target.value)
-                }, { readOnly })}
+                {renderInputComponent(fieldConfig, value, onChange, { readOnly })}
             </div>
         );
     };
@@ -727,7 +725,7 @@ const PanelBox = (props: PanelBoxProps) => {
                         as="textarea"
                         value={value}
                         placeholder={placeholder}
-                        onChange={onChange}
+                        onChange={(e) => onChange(e.target.value)}
                     />
                 );
             default:
@@ -738,7 +736,7 @@ const PanelBox = (props: PanelBoxProps) => {
                         type={type}
                         value={value}
                         placeholder={placeholder}
-                        onChange={onChange}
+                        onChange={(e) => onChange(e.target.value)}
                     />
                 );
         }
@@ -822,7 +820,6 @@ const PanelBox = (props: PanelBoxProps) => {
                                     } else {
                                         displayValue = String(attrValue);
                                     }
-                                    console.log('[renderField]', attrConfig)
                                     return renderField(
                                         attrKey,
                                         attrConfig,

@@ -7,7 +7,7 @@ import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { Button } from '@/components/Commom'
 import { Input } from '@/components/Input'
-import { Select } from '@/components/Selection'
+import { Select, SelectOption } from '@/components/Selection'
 import { BpmnTranslations, LanguageManager } from '@/utils/locales'
 import CustomLoggerModule from '../CustomLoggerService/CustomLoggerService'
 import CustomConfigModule from '../CustomConfigService/CustomConfigService'
@@ -576,6 +576,28 @@ const PanelBox = (props: PanelBoxProps) => {
     const [_businessObject, setBusinessObject] = useState(selectedElement.businessObject)
     const [record, setRecord] = useState<any>(null)
 
+    // 初始化 businessObject，使用默认值合并到 $attrs
+    useEffect(() => {
+        const config = customConfig?.getConfig() || {};
+        const properties = config.fields?.attrs?.properties || {};
+        const defaultAttrs: any = {};
+        Object.keys(properties).forEach(key => {
+            if (properties[key].defaultValue !== undefined) {
+                defaultAttrs[key] = properties[key].defaultValue;
+            }
+        });
+        const mergedBusinessObject = {
+            ...selectedElement.businessObject,
+            $attrs: {
+                ...defaultAttrs,
+                ...(selectedElement.businessObject.$attrs || {})
+            }
+        };
+        console.log('[mergedBusinessObject]', mergedBusinessObject)
+        setBusinessObject(mergedBusinessObject);
+        setRecord(null);
+    }, [selectedElement, customConfig]);
+
     // 使用防抖的保存逻辑
     const debouncedSave = useMemo(() => {
         let timeout: NodeJS.Timeout;
@@ -661,13 +683,16 @@ const PanelBox = (props: PanelBoxProps) => {
         return (
             <div key={fieldKey} className={`space-y-2 flex items-center gap-[10px] ${fieldClass}`}>
                 <label className='block text-sm font-medium text-gray-700'>{getMessage(label)}</label>
-                {renderInputComponent(fieldConfig, value, onChange, { readOnly })}
+                {renderInputComponent(fieldConfig, value, (e) => {
+                    console.log('renderInputComponent', fieldKey, value)
+                    onChange(e.target.value)
+                }, { readOnly })}
             </div>
         );
     };
 
     // 根据配置渲染输入组件
-    const renderInputComponent = (fieldConfig: any, value: any, onChange: (value: string) => void, extraProps: any = {}) => {
+    const renderInputComponent = (fieldConfig: any, value: any, onChange: (value: any) => void, extraProps: any = {}) => {
         const { type = 'text', placeholder, options, ...fieldProps } = fieldConfig;
 
         switch (type) {
@@ -678,8 +703,21 @@ const PanelBox = (props: PanelBoxProps) => {
                         {...fieldProps}
                         value={value}
                         onChange={onChange}
-                        options={options?.map((opt: any) => ({ value: opt.value, label: opt.label })) || []}
-                    />
+                        placeholder={placeholder}
+                        disabled={extraProps.readOnly}
+                        clearable={!fieldConfig.required}
+                    >
+                        {options?.map((opt: any, index: number) => (
+                            <SelectOption
+                                key={`${opt.value}-${index}`}
+                                value={opt.value}
+                                label={opt.label}
+                                disabled={opt.disabled}
+                            >
+                                {opt.label}
+                            </SelectOption>
+                        ))}
+                    </Select>
                 );
             case 'textarea':
                 return (
@@ -729,7 +767,7 @@ const PanelBox = (props: PanelBoxProps) => {
         const properties = config.fields?.attrs?.properties || {};
 
         return sortedAttrs.filter(attr => properties[attr]?.enabled !== false);
-    },[_businessObject]);
+    }, [_businessObject]);
 
     if (config.debug.logRenders) {
         logger.info('PanelBox Render', {
@@ -784,12 +822,12 @@ const PanelBox = (props: PanelBoxProps) => {
                                     } else {
                                         displayValue = String(attrValue);
                                     }
-
+                                    console.log('[renderField]', attrConfig)
                                     return renderField(
                                         attrKey,
                                         attrConfig,
                                         displayValue,
-                                        (value) => updateAttr(attrKey, value)
+                                        (value) => updateAttr(attrKey, String(value))
                                     );
                                 });
                             default:

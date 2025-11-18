@@ -45,13 +45,15 @@ const CONFIG_JSON = {
                 "assignee": {
                     "type": "text",
                     "label": "负责人",
-                    "placeholder": "输入负责人姓名"
+                    "placeholder": "输入负责人姓名",
+                    "defaultValue": "assignee"
                 },
                 "description": {
                     "type": "textarea",
                     "label": "描述",
                     "placeholder": "输入描述信息",
-                    "rows": 3
+                    "rows": 3,
+                    "defaultValue": "description"
                 },
                 "priority": {
                     "type": "select",
@@ -61,7 +63,8 @@ const CONFIG_JSON = {
                         { "value": "medium", "label": "中" },
                         { "value": "high", "label": "高" },
                         { "value": "urgent", "label": "紧急" }
-                    ]
+                    ],
+                    "defaultValue": "medium"
                 },
                 "category": {
                     "type": "select",
@@ -71,7 +74,8 @@ const CONFIG_JSON = {
                         { "value": "task", "label": "任务" },
                         { "value": "gateway", "label": "网关" },
                         { "value": "event", "label": "事件" }
-                    ]
+                    ],
+                    "defaultValue": "task"
                 }
             }
         }

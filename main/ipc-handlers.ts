@@ -4,6 +4,8 @@ import { app } from 'electron';
 import { WindowManager } from './window-manager';
 import fs from 'fs';
 import path from 'path';
+import axios, { AxiosRequestConfig } from 'axios';
+import { proxyApiRequest, ProxyServiceType, getProxyManager, ProxyRequestConfig } from '../src/utils/proxy-manager';
 
 // 窗口管理实例
 let windowManager: WindowManager;
@@ -209,5 +211,178 @@ function setupStateIPC() {
 
   ipcMain.handle('get-initial-language-state', () => {
     return globalLanguageState;
+  });
+
+  // 代理管理器相关IPC处理器
+  setupProxyIPC();
+}
+
+// 代理管理器相关IPC处理器
+function setupProxyIPC() {
+  // 执行代理请求
+  ipcMain.handle('proxy-request', async (event, {
+    service,
+    config,
+    pathRewrite
+  }: {
+    service: ProxyServiceType;
+    config: ProxyRequestConfig;
+    pathRewrite?: Record<string, string>;
+  }) => {
+    try {
+      log.info(`🔄 IPC代理请求: ${service}`, {
+        method: config.method,
+        url: config.url
+      });
+
+      const result = await proxyApiRequest(service, config, pathRewrite);
+      return { success: true, data: result };
+    } catch (error: any) {
+      log.error(`❌ IPC代理请求失败: ${service}`, error);
+      return {
+        success: false,
+        error: error.message || 'Proxy request failed',
+        details: error
+      };
+    }
+  });
+
+  // 获取代理配置信息
+  ipcMain.handle('get-proxy-config', async (event, service: ProxyServiceType) => {
+    try {
+      const proxyManager = getProxyManager();
+      const config = proxyManager.getProxyConfig(service);
+      return { success: true, config };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to get proxy config'
+      };
+    }
+  });
+
+  // 获取所有代理配置
+  ipcMain.handle('get-all-proxy-configs', async () => {
+    try {
+      const proxyManager = getProxyManager();
+      const configs = proxyManager.getAllProxyConfigs();
+      return { success: true, configs };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to get proxy configs'
+      };
+    }
+  });
+
+  // 更新代理配置
+  ipcMain.handle('update-proxy-config', async (event, {
+    service,
+    updates
+  }: {
+    service: ProxyServiceType;
+    updates: any;
+  }) => {
+    try {
+      const proxyManager = getProxyManager();
+      proxyManager.updateProxyConfig(service, updates);
+      return { success: true, message: 'Proxy config updated' };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to update proxy config'
+      };
+    }
+  });
+
+  // 代理健康检查
+  ipcMain.handle('proxy-health-check', async () => {
+    try {
+      const proxyManager = getProxyManager();
+      const healthStatus = await proxyManager.healthCheck();
+      return { success: true, healthStatus };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Health check failed'
+      };
+    }
+  });
+
+  // BPMN API 专用代理请求
+  ipcMain.handle('proxy-bpmn-api', async (event, config: ProxyRequestConfig) => {
+    try {
+      log.info(`🔄 BPMN API代理请求`, {
+        method: config.method,
+        url: config.url
+      });
+
+      const result = await proxyApiRequest(ProxyServiceType.BPMN, config);
+      return { success: true, data: result };
+    } catch (error: any) {
+      log.error(`❌ BPMN API代理请求失败`, error);
+      return {
+        success: false,
+        error: error.message || 'BPMN API proxy request failed',
+        details: error
+      };
+    }
+  });
+
+  // 认证API专用代理请求
+  ipcMain.handle('proxy-auth-api', async (event, config: ProxyRequestConfig) => {
+    try {
+      log.info(`🔄 认证API代理请求`, {
+        method: config.method,
+        url: config.url
+      });
+      const result = await proxyApiRequest(ProxyServiceType.AUTH, config);
+      return { success: true, data: result };
+    } catch (error: any) {
+      log.error(`❌ 认证API代理请求失败`, error);
+      return {
+        success: false,
+        error: error.message || 'Auth API proxy request failed',
+        details: error
+      };
+    }
+  });
+
+  // 文件API专用代理请求
+  ipcMain.handle('proxy-file-api', async (event, config: ProxyRequestConfig) => {
+    try {
+      log.info(`🔄 文件API代理请求`, {
+        method: config.method,
+        url: config.url
+      });
+      const result = await proxyApiRequest(ProxyServiceType.FILE, config);
+      return { success: true, data: result };
+    } catch (error: any) {
+      log.error(`❌ 文件API代理请求失败`, error);
+      return {
+        success: false,
+        error: error.message || 'File API proxy request failed',
+        details: error
+      };
+    }
+  });
+
+  // 通用API代理请求
+  ipcMain.handle('proxy-api', async (event, config: ProxyRequestConfig) => {
+    try {
+      log.info(`🔄 通用API代理请求`, {
+        method: config.method,
+        url: config.url
+      });
+      const result = await proxyApiRequest(ProxyServiceType.API, config);
+      return { success: true, data: result };
+    } catch (error: any) {
+      log.error(`❌ 通用API代理请求失败`, error);
+      return {
+        success: false,
+        error: error.message || 'API proxy request failed',
+        details: error
+      };
+    }
   });
 }

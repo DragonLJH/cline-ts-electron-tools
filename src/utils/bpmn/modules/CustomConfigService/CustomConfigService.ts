@@ -1,7 +1,8 @@
 import { CustomLoggerService } from '../CustomLoggerService/CustomLoggerService';
 import CustomLoggerModule from '../CustomLoggerService/CustomLoggerService';
 
-const CONFIG_JSON = {
+// 默认配置，当远程加载失败时使用
+const DEFAULT_CONFIG_JSON = {
     "version": "1.0.0",
     "description": "BPMN属性面板配置",
 
@@ -157,6 +158,24 @@ const CONFIG_JSON = {
     }
 }
 
+// 添加加载远程配置的方法
+async function loadRemoteConfig(url: string): Promise<any> {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        let text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            return text
+        }
+    } catch (error) {
+        console.warn('Failed to load remote config, using default:', error);
+        return DEFAULT_CONFIG_JSON;
+    }
+}
 
 export interface PropertiesConfig {
     version: string;
@@ -182,11 +201,52 @@ class CustomConfigService {
 
     constructor(customLogger: CustomLoggerService) {
         this._logger = customLogger;
-        this._config = { ...CONFIG_JSON } as PropertiesConfig;
-        this._logger.info('Configuration service initialized', {
+        this._config = { ...DEFAULT_CONFIG_JSON } as PropertiesConfig;
+
+        // 异步加载远程配置
+        this._loadRemoteConfig();
+
+        this._logger.info('Configuration service initialized with default config', {
             version: this._config.version,
             description: this._config.description
         });
+    }
+
+    // 私有方法：异步加载远程配置
+    private async _loadRemoteConfig(): Promise<void> {
+        try {
+            // 从环境变量获取远程配置URL，优先级：VITE_BPMN_CONFIG_URL > BPMN_CONFIG_URL > 默认URL
+            const remoteConfigUrl = process.env.VITE_BPMN_CONFIG_URL ||
+                process.env.BPMN_CONFIG_URL ||
+                '/api/bpmn/config';
+
+            this._logger.debug('Loading remote config from:', remoteConfigUrl);
+
+            const remoteConfig = await loadRemoteConfig(remoteConfigUrl);
+
+            // 验证远程配置
+            if (remoteConfig && remoteConfig.version) {
+                this._config = { ...remoteConfig } as PropertiesConfig;
+
+                this._logger.info('Remote configuration loaded successfully', {
+                    version: this._config.version,
+                    description: this._config.description
+                });
+
+                // 通知监听器配置已更新
+                this._listeners.forEach(listener => {
+                    try {
+                        listener(this._config);
+                    } catch (error) {
+                        this._logger.error('Error notifying listener of remote config', error);
+                    }
+                });
+            } else {
+                this._logger.warn('Invalid remote configuration, keeping default');
+            }
+        } catch (error) {
+            this._logger.error('Failed to load remote configuration', error);
+        }
     }
 
     // 获取完整配置
@@ -291,7 +351,7 @@ class CustomConfigService {
 
     // 重置为默认配置
     resetToDefault(): void {
-        this._config = { ...CONFIG_JSON } as PropertiesConfig;
+        this._config = { ...DEFAULT_CONFIG_JSON } as PropertiesConfig;
         this._logger.info('Configuration reset to default');
 
         // 通知所有监听器

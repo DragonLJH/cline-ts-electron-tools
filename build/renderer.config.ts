@@ -50,6 +50,41 @@ const renderer: Configuration & { devServer?: any } = {
     hot: true, // 开启热重载
     open: false, // 不自动打开浏览器
     host: 'localhost', // 绑定到localhost，避免IPv6问题
+
+    // Nginx风格反向代理配置
+    proxy: [
+      {
+        context: [process.env.PROXY_API_PATH || '/api'],
+        target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
+        changeOrigin: true,
+        secure: process.env.VERIFY_SSL === 'true',
+        timeout: parseInt(process.env.PROXY_TIMEOUT || '30000'),
+        pathRewrite: {
+          ['^' + (process.env.PROXY_API_PATH || '/api')]: ''
+        }
+      },
+      {
+        context: [process.env.PROXY_BPMN_PATH || '/bpmn-api'],
+        target: process.env.BPMN_API_TARGET || 'http://localhost:8080/bpmn/v1',
+        changeOrigin: true,
+        secure: process.env.VERIFY_SSL === 'true',
+        timeout: parseInt(process.env.PROXY_TIMEOUT || '30000')
+      },
+      {
+        context: [process.env.PROXY_AUTH_PATH || '/auth'],
+        target: process.env.AUTH_API_TARGET || 'http://localhost:8081/auth',
+        changeOrigin: true,
+        secure: process.env.VERIFY_SSL === 'true',
+        timeout: parseInt(process.env.PROXY_TIMEOUT || '30000')
+      },
+      {
+        context: [process.env.PROXY_FILE_PATH || '/files'],
+        target: process.env.FILE_API_TARGET || 'http://localhost:8082/files',
+        changeOrigin: true,
+        secure: process.env.VERIFY_SSL === 'true',
+        timeout: parseInt(process.env.PROXY_TIMEOUT || '30000')
+      }
+    ]
   },
 };
 

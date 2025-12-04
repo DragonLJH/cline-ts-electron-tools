@@ -64,6 +64,16 @@ const renderer: Configuration & { devServer?: any } = {
         }
       },
       {
+        context: [process.env.PROXY_MYAPP_PATH || '/myapp-api'],
+        target: process.env.MYAPP_API_TARGET || 'http://localhost:8000',
+        changeOrigin: true,
+        secure: process.env.VERIFY_SSL === 'true',
+        timeout: parseInt(process.env.PROXY_TIMEOUT || '30000'),
+        pathRewrite: {
+          ['^' + (process.env.PROXY_MYAPP_PATH || '/myapp-api')]: ''
+        }
+      },
+      {
         context: [process.env.PROXY_BPMN_PATH || '/bpmn-api'],
         target: process.env.BPMN_API_TARGET || 'http://localhost:8080/bpmn/v1',
         changeOrigin: true,

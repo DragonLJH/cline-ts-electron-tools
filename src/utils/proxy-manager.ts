@@ -4,6 +4,7 @@ import got, { Options, Response as GotResponse } from 'got';
  * 代理服务类型枚举
  */
 export enum ProxyServiceType {
+  MYAPP_API = 'myapp-api',
   API = 'api',
   BPMN = 'bpmn',
   AUTH = 'auth',
@@ -81,6 +82,14 @@ export class ProxyManager {
     this.proxyConfigs.set(ProxyServiceType.FILE, {
       service: ProxyServiceType.FILE,
       target: process.env.MAIN_FILE_TARGET || 'http://localhost:8082/files',
+      timeout: parseInt(process.env.PROXY_TIMEOUT || '30000'),
+      sslVerify: process.env.VERIFY_SSL !== 'false'
+    });
+
+
+    this.proxyConfigs.set(ProxyServiceType.MYAPP_API, {
+      service: ProxyServiceType.MYAPP_API,
+      target: 'http://localhost:8000/myapp-api',
       timeout: parseInt(process.env.PROXY_TIMEOUT || '30000'),
       sslVerify: process.env.VERIFY_SSL !== 'false'
     });

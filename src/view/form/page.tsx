@@ -1,187 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Form } from '@/components/Form';
+import { MyAppApiService } from '@/service';
+import { User, Role, Permission } from '@/types';
 
-// API基础URL - 使用代理路径
-const API_BASE_URL = '/myapp-api';
-
-// 数据类型定义
-interface User {
-  id: number;
-  username: string;
-  email?: string;
-  phone?: string;
-  nickname?: string;
-  real_name?: string;
-  gender?: number;
-  birthday?: string;
-  avatar?: string;
-  status: number;
-  is_deleted: number;
-  last_login_time?: string;
-  last_login_ip?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Role {
-  id: number;
-  name: string;
-  code: string;
-  description?: string;
-  status: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Permission {
-  id: number;
-  name: string;
-  code: string;
-  type: number;
-  parent_id: number;
-  path?: string;
-  method?: string;
-  description?: string;
-  status: number;
-  created_at: string;
-  updated_at: string;
-}
-
-// API服务类
-class ApiService {
-  private static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    try {
-      const response = await fetch(url, config);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
-  }
-
-  // 用户相关API
-  static async getUsers(): Promise<User[]> {
-    return this.request('/api/myapp/users');
-  }
-
-  static async createUser(data: Omit<User, 'id' | 'created_at' | 'updated_at'>): Promise<any> {
-    return this.request('/api/myapp/users', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  static async updateUser(id: number, data: Partial<User>): Promise<any> {
-    return this.request(`/api/myapp/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  static async deleteUser(id: number): Promise<any> {
-    return this.request(`/api/myapp/users/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  static async batchDeleteUsers(ids: number[]): Promise<any> {
-    return this.request('/api/myapp/users/batch-delete', {
-      method: 'POST',
-      body: JSON.stringify({ ids }),
-    });
-  }
-
-  // 角色相关API
-  static async getRoles(): Promise<Role[]> {
-    return this.request('/api/myapp/roles');
-  }
-
-  static async createRole(data: Omit<Role, 'id' | 'created_at' | 'updated_at'>): Promise<any> {
-    return this.request('/api/myapp/roles', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  static async updateRole(id: number, data: Partial<Role>): Promise<any> {
-    return this.request(`/api/myapp/roles/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  static async deleteRole(id: number): Promise<any> {
-    return this.request(`/api/myapp/roles/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  static async batchDeleteRoles(ids: number[]): Promise<any> {
-    return this.request('/api/myapp/roles/batch-delete', {
-      method: 'POST',
-      body: JSON.stringify({ ids }),
-    });
-  }
-
-  // 权限相关API
-  static async getPermissions(): Promise<Permission[]> {
-    return this.request('/api/myapp/permissions');
-  }
-
-  static async createPermission(data: Omit<Permission, 'id' | 'created_at' | 'updated_at'>): Promise<any> {
-    return this.request('/api/myapp/permissions', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  static async updatePermission(id: number, data: Partial<Permission>): Promise<any> {
-    return this.request(`/api/myapp/permissions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  static async deletePermission(id: number): Promise<any> {
-    return this.request(`/api/myapp/permissions/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  static async batchDeletePermissions(ids: number[]): Promise<any> {
-    return this.request('/api/myapp/permissions/batch-delete', {
-      method: 'POST',
-      body: JSON.stringify({ ids }),
-    });
-  }
-
-  // 关联管理API
-  static async assignRolesToUser(userId: number, roleIds: number[]): Promise<any> {
-    return this.request('/api/myapp/user-roles', {
-      method: 'POST',
-      body: JSON.stringify({ user_id: userId, role_ids: roleIds }),
-    });
-  }
-
-  static async assignPermissionsToRole(roleId: number, permissionIds: number[]): Promise<any> {
-    return this.request('/api/myapp/role-permissions', {
-      method: 'POST',
-      body: JSON.stringify({ role_id: roleId, permission_ids: permissionIds }),
-    });
-  }
-}
+// 创建API服务实例
+const apiService = new MyAppApiService();
 
 const FormPage: React.FC = () => {
   const [submitResult, setSubmitResult] = useState<any>(null);
@@ -231,15 +54,15 @@ const FormPage: React.FC = () => {
       let data;
       switch (type) {
         case 'users':
-          data = await ApiService.getUsers();
+          data = await apiService.users.getUsers();
           setUsers(data);
           break;
         case 'roles':
-          data = await ApiService.getRoles();
+          data = await apiService.roles.getRoles();
           setRoles(data);
           break;
         case 'permissions':
-          data = await ApiService.getPermissions();
+          data = await apiService.permissions.getPermissions();
           setPermissions(data);
           break;
       }
@@ -263,15 +86,15 @@ const FormPage: React.FC = () => {
       let result;
       switch (type) {
         case 'user':
-          result = await ApiService.createUser(values);
+          result = await apiService.users.createUser(values);
           await loadData('users');
           break;
         case 'role':
-          result = await ApiService.createRole(values);
+          result = await apiService.roles.createRole(values);
           await loadData('roles');
           break;
         case 'permission':
-          result = await ApiService.createPermission(values);
+          result = await apiService.permissions.createPermission(values);
           await loadData('permissions');
           break;
       }
@@ -297,15 +120,15 @@ const FormPage: React.FC = () => {
       let result;
       switch (type) {
         case 'user':
-          result = await ApiService.updateUser(id, values);
+          result = await apiService.users.updateUser(id, values);
           await loadData('users');
           break;
         case 'role':
-          result = await ApiService.updateRole(id, values);
+          result = await apiService.roles.updateRole(id, values);
           await loadData('roles');
           break;
         case 'permission':
-          result = await ApiService.updatePermission(id, values);
+          result = await apiService.permissions.updatePermission(id, values);
           await loadData('permissions');
           break;
       }
@@ -335,15 +158,15 @@ const FormPage: React.FC = () => {
     try {
       switch (type) {
         case 'user':
-          await ApiService.deleteUser(id);
+          await apiService.users.deleteUser(id);
           await loadData('users');
           break;
         case 'role':
-          await ApiService.deleteRole(id);
+          await apiService.roles.deleteRole(id);
           await loadData('roles');
           break;
         case 'permission':
-          await ApiService.deletePermission(id);
+          await apiService.permissions.deletePermission(id);
           await loadData('permissions');
           break;
       }
@@ -372,15 +195,15 @@ const FormPage: React.FC = () => {
     try {
       switch (type) {
         case 'user':
-          await ApiService.batchDeleteUsers(ids);
+          await apiService.users.batchDeleteUsers(ids);
           await loadData('users');
           break;
         case 'role':
-          await ApiService.batchDeleteRoles(ids);
+          await apiService.roles.batchDeleteRoles(ids);
           await loadData('roles');
           break;
         case 'permission':
-          await ApiService.batchDeletePermissions(ids);
+          await apiService.permissions.batchDeletePermissions(ids);
           await loadData('permissions');
           break;
       }

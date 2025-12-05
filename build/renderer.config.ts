@@ -53,47 +53,48 @@ const renderer: Configuration & { devServer?: any } = {
 
     // Nginx风格反向代理配置
     proxy: [
-      {
-        context: [process.env.PROXY_API_PATH || '/api'],
-        target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
-        changeOrigin: true,
-        secure: process.env.VERIFY_SSL === 'true',
-        timeout: parseInt(process.env.PROXY_TIMEOUT || '30000'),
-        pathRewrite: {
-          ['^' + (process.env.PROXY_API_PATH || '/api')]: ''
-        }
-      },
+      // /myapp-api 必须放在前面，因为 /myapp-api/api/* 会被 /api 规则错误匹配
       {
         context: [process.env.PROXY_MYAPP_PATH || '/myapp-api'],
-        target: process.env.MYAPP_API_TARGET || 'http://localhost:8000',
+        target: 'http://localhost:8000/myapp-api',
         changeOrigin: true,
         secure: process.env.VERIFY_SSL === 'true',
         timeout: parseInt(process.env.PROXY_TIMEOUT || '30000'),
-        pathRewrite: {
-          ['^' + (process.env.PROXY_MYAPP_PATH || '/myapp-api')]: ''
-        }
+        // pathRewrite: {
+        //   ['^' + (process.env.PROXY_MYAPP_PATH || '/myapp-api')]: ''
+        // }
       },
-      {
-        context: [process.env.PROXY_BPMN_PATH || '/bpmn-api'],
-        target: process.env.BPMN_API_TARGET || 'http://localhost:8080/bpmn/v1',
-        changeOrigin: true,
-        secure: process.env.VERIFY_SSL === 'true',
-        timeout: parseInt(process.env.PROXY_TIMEOUT || '30000')
-      },
-      {
-        context: [process.env.PROXY_AUTH_PATH || '/auth'],
-        target: process.env.AUTH_API_TARGET || 'http://localhost:8081/auth',
-        changeOrigin: true,
-        secure: process.env.VERIFY_SSL === 'true',
-        timeout: parseInt(process.env.PROXY_TIMEOUT || '30000')
-      },
-      {
-        context: [process.env.PROXY_FILE_PATH || '/files'],
-        target: process.env.FILE_API_TARGET || 'http://localhost:8082/files',
-        changeOrigin: true,
-        secure: process.env.VERIFY_SSL === 'true',
-        timeout: parseInt(process.env.PROXY_TIMEOUT || '30000')
-      }
+      // {
+      //   context: [process.env.PROXY_API_PATH || '/api'],
+      //   target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
+      //   changeOrigin: true,
+      //   secure: process.env.VERIFY_SSL === 'true',
+      //   timeout: parseInt(process.env.PROXY_TIMEOUT || '30000'),
+      //   pathRewrite: {
+      //     ['^' + (process.env.PROXY_API_PATH || '/api')]: ''
+      //   }
+      // },
+      // {
+      //   context: [process.env.PROXY_BPMN_PATH || '/bpmn-api'],
+      //   target: process.env.BPMN_API_TARGET || 'http://localhost:8080/bpmn/v1',
+      //   changeOrigin: true,
+      //   secure: process.env.VERIFY_SSL === 'true',
+      //   timeout: parseInt(process.env.PROXY_TIMEOUT || '30000')
+      // },
+      // {
+      //   context: [process.env.PROXY_AUTH_PATH || '/auth'],
+      //   target: process.env.AUTH_API_TARGET || 'http://localhost:8081/auth',
+      //   changeOrigin: true,
+      //   secure: process.env.VERIFY_SSL === 'true',
+      //   timeout: parseInt(process.env.PROXY_TIMEOUT || '30000')
+      // },
+      // {
+      //   context: [process.env.PROXY_FILE_PATH || '/files'],
+      //   target: process.env.FILE_API_TARGET || 'http://localhost:8082/files',
+      //   changeOrigin: true,
+      //   secure: process.env.VERIFY_SSL === 'true',
+      //   timeout: parseInt(process.env.PROXY_TIMEOUT || '30000')
+      // }
     ]
   },
 };

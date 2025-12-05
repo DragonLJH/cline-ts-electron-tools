@@ -39,6 +39,20 @@ export interface ElectronAPI {
   sendLanguageUpdate: (state: any) => void;
   getInitialLanguageState: () => Promise<any>;
 
+  // API代理
+  proxyRequest: (params: {
+    service: string;
+    config: {
+      method?: string;
+      url: string;
+      headers?: Record<string, string>;
+      body?: string;
+      searchParams?: Record<string, string>;
+      timeout?: number;
+    };
+    pathRewrite?: Record<string, string>;
+  }) => Promise<{ success: boolean; data?: any; error?: string; details?: any }>;
+
 }
 
 // 定义要在渲染进程中暴露的API
@@ -69,6 +83,8 @@ const electronAPI: ElectronAPI = {
   sendLanguageUpdate: (state: any) => ipcRenderer.send('language-update', state),
   getInitialLanguageState: () => ipcRenderer.invoke('get-initial-language-state'),
 
+  // API代理
+  proxyRequest: (params) => ipcRenderer.invoke('proxy-request', params),
 
 };
 

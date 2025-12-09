@@ -19,6 +19,7 @@
   "devDependencies": {
     "@bpmn-io/properties-panel": "^3.13.0",
     "@types/electron": "^1.6.12",
+    "@types/jsdom": "^27.0.0",
     "@types/node": "^24.9.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
@@ -35,7 +36,9 @@
     "electron": "^22.3.27",
     "electron-builder": "^26.0.12",
     "electron-log": "^4.4.4",
+    "fast-xml-parser": "^5.3.2",
     "html-webpack-plugin": "^5.6.4",
+    "jsdom": "^27.2.0",
     "postcss": "^8.5.6",
     "postcss-loader": "^8.2.0",
     "sass": "^1.93.2",

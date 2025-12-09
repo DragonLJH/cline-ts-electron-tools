@@ -42,6 +42,22 @@ export { default as CustomModeler } from './core/CustomModeler/CustomModeler';
 // 2. XML字符串工具 - XML格式支持
 export { initialDiagram } from './core/xmlStr';
 
+// 3. 自定义XML解析器 - 不依赖bpmn-js的XML解析
+export { importXML, CustomBpmnXmlParser } from './utils/xmlImporter';
+
+// XML解析器相关类型
+export type {
+  BpmnParseResult,
+  BpmnBaseElement,
+  BpmnProcess,
+  BpmnStartEvent,
+  BpmnEndEvent,
+  BpmnUserTask,
+  BpmnExclusiveGateway,
+  BpmnParallelGateway,
+  BpmnSequenceFlow
+} from './utils/xmlImporter';
+
 // =============================================================================
 // 定制功能模块导出
 // =============================================================================

@@ -1,5 +1,198 @@
 /* BPMN 流程设计器样式 */
 
+/* ========================================
+   BPMN CSS 变量系统 - 基于Tailwind CSS
+   ======================================== */
+
+/* 亮色主题变量 */
+:root {
+  /* 基础颜色 */
+  --bpmn-primary: #3b82f6;
+  --bpmn-secondary: #6b7280;
+  --bpmn-success: #10b981;
+  --bpmn-warning: #f59e0b;
+  --bpmn-error: #ef4444;
+  --bpmn-info: #06b6d4;
+
+  /* 中性色 */
+  --bpmn-background: #ffffff;
+  --bpmn-surface: #f9fafb;
+  --bpmn-border: #e5e7eb;
+  --bpmn-text: #111827;
+  --bpmn-text-secondary: #6b7280;
+
+  /* BPMN元素专用色 */
+  --bpmn-start-event-fill: #10b981;
+  --bpmn-start-event-stroke: #059669;
+  --bpmn-end-event-fill: #ef4444;
+  --bpmn-end-event-stroke: #dc2626;
+  --bpmn-user-task-fill: #3b82f6;
+  --bpmn-user-task-stroke: #2563eb;
+  --bpmn-service-task-fill: #8b5cf6;
+  --bpmn-service-task-stroke: #7c3aed;
+  --bpmn-gateway-fill: #f59e0b;
+  --bpmn-gateway-stroke: #d97706;
+  --bpmn-connection-stroke: #6b7280;
+  --bpmn-label-color: #374151;
+
+  /* 其他元素颜色 */
+  --bpmn-manual-task-fill: #06b6d4;
+  --bpmn-manual-task-stroke: #0891b2;
+  --bpmn-business-rule-fill: #f59e0b;
+  --bpmn-business-rule-stroke: #d97706;
+  --bpmn-script-task-fill: #10b981;
+  --bpmn-script-task-stroke: #059669;
+  --bpmn-subprocess-fill: #ffffff;
+  --bpmn-subprocess-stroke: #6b7280;
+  --bpmn-call-activity-fill: #ffffff;
+  --bpmn-call-activity-stroke: #3b82f6;
+  --bpmn-data-object-fill: #ffffff;
+  --bpmn-data-object-stroke: #6b7280;
+  --bpmn-data-store-fill: #ffffff;
+  --bpmn-data-store-stroke: #6b7280;
+
+  /* 连接线颜色 */
+  --bpmn-message-flow-stroke: #3b82f6;
+  --bpmn-association-stroke: #9ca3af;
+
+  /* 中间事件颜色 */
+  --bpmn-intermediate-fill: #f59e0b;
+  --bpmn-intermediate-stroke: #d97706;
+
+  /* 样式参数 */
+  --bpmn-stroke-width: 2px;
+  --bpmn-stroke-width-thick: 3px;
+  --bpmn-border-radius: 8px;
+  --bpmn-border-radius-large: 12px;
+}
+
+/* 暗色主题变量 */
+.dark {
+  /* 基础颜色 */
+  --bpmn-primary: #60a5fa;
+  --bpmn-secondary: #9ca3af;
+  --bpmn-success: #34d399;
+  --bpmn-warning: #fbbf24;
+  --bpmn-error: #f87171;
+  --bpmn-info: #22d3ee;
+
+  /* 中性色 */
+  --bpmn-background: #111827;
+  --bpmn-surface: #1f2937;
+  --bpmn-border: #374151;
+  --bpmn-text: #f9fafb;
+  --bpmn-text-secondary: #d1d5db;
+
+  /* BPMN元素专用色 */
+  --bpmn-start-event-fill: #34d399;
+  --bpmn-start-event-stroke: #10b981;
+  --bpmn-end-event-fill: #f87171;
+  --bpmn-end-event-stroke: #ef4444;
+  --bpmn-user-task-fill: #60a5fa;
+  --bpmn-user-task-stroke: #3b82f6;
+  --bpmn-service-task-fill: #a78bfa;
+  --bpmn-service-task-stroke: #8b5cf6;
+  --bpmn-gateway-fill: #fbbf24;
+  --bpmn-gateway-stroke: #f59e0b;
+  --bpmn-connection-stroke: #9ca3af;
+  --bpmn-label-color: #e5e7eb;
+
+  /* 其他元素颜色 */
+  --bpmn-manual-task-fill: #22d3ee;
+  --bpmn-manual-task-stroke: #06b6d4;
+  --bpmn-business-rule-fill: #fbbf24;
+  --bpmn-business-rule-stroke: #f59e0b;
+  --bpmn-script-task-fill: #34d399;
+  --bpmn-script-task-stroke: #10b981;
+  --bpmn-subprocess-fill: #1f2937;
+  --bpmn-subprocess-stroke: #9ca3af;
+  --bpmn-call-activity-fill: #1f2937;
+  --bpmn-call-activity-stroke: #60a5fa;
+  --bpmn-data-object-fill: #1f2937;
+  --bpmn-data-object-stroke: #9ca3af;
+  --bpmn-data-store-fill: #1f2937;
+  --bpmn-data-store-stroke: #9ca3af;
+
+  /* 连接线颜色 */
+  --bpmn-message-flow-stroke: #60a5fa;
+  --bpmn-association-stroke: #6b7280;
+
+  /* 中间事件颜色 */
+  --bpmn-intermediate-fill: #fbbf24;
+  --bpmn-intermediate-stroke: #f59e0b;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* 自动暗色主题支持 */
+  :root {
+    /* 基础颜色 */
+    --bpmn-primary: #60a5fa;
+    --bpmn-secondary: #9ca3af;
+    --bpmn-success: #34d399;
+    --bpmn-warning: #fbbf24;
+    --bpmn-error: #f87171;
+    --bpmn-info: #22d3ee;
+
+    /* 中性色 */
+    --bpmn-background: #111827;
+    --bpmn-surface: #1f2937;
+    --bpmn-border: #374151;
+    --bpmn-text: #f9fafb;
+    --bpmn-text-secondary: #d1d5db;
+
+    /* BPMN元素专用色 */
+    --bpmn-start-event-fill: #34d399;
+    --bpmn-start-event-stroke: #10b981;
+    --bpmn-end-event-fill: #f87171;
+    --bpmn-end-event-stroke: #ef4444;
+    --bpmn-user-task-fill: #60a5fa;
+    --bpmn-user-task-stroke: #3b82f6;
+    --bpmn-service-task-fill: #a78bfa;
+    --bpmn-service-task-stroke: #8b5cf6;
+    --bpmn-gateway-fill: #fbbf24;
+    --bpmn-gateway-stroke: #f59e0b;
+    --bpmn-connection-stroke: #9ca3af;
+    --bpmn-label-color: #e5e7eb;
+
+    /* 其他元素颜色 */
+    --bpmn-manual-task-fill: #22d3ee;
+    --bpmn-manual-task-stroke: #06b6d4;
+    --bpmn-business-rule-fill: #fbbf24;
+    --bpmn-business-rule-stroke: #f59e0b;
+    --bpmn-script-task-fill: #34d399;
+    --bpmn-script-task-stroke: #10b981;
+    --bpmn-subprocess-fill: #1f2937;
+    --bpmn-subprocess-stroke: #9ca3af;
+    --bpmn-call-activity-fill: #1f2937;
+    --bpmn-call-activity-stroke: #60a5fa;
+    --bpmn-data-object-fill: #1f2937;
+    --bpmn-data-object-stroke: #9ca3af;
+    --bpmn-data-store-fill: #1f2937;
+    --bpmn-data-store-stroke: #9ca3af;
+
+    /* 连接线颜色 */
+    --bpmn-message-flow-stroke: #60a5fa;
+    --bpmn-association-stroke: #6b7280;
+
+    /* 中间事件颜色 */
+    --bpmn-intermediate-fill: #fbbf24;
+    --bpmn-intermediate-stroke: #f59e0b;
+  }
+}
+
+/* 高对比度主题 */
+@media (prefers-contrast: high) {
+  :root {
+    --bpmn-primary: #0066cc;
+    --bpmn-success: #008000;
+    --bpmn-warning: #ff6600;
+    --bpmn-error: #cc0000;
+    --bpmn-border: #000000;
+    --bpmn-text: #000000;
+    --bpmn-background: #ffffff;
+  }
+}
+
 /* 自定义属性面板样式 */
 .custom-properties-panel {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
@@ -286,6 +479,88 @@
   top: 20px;
   left: 20px;
   z-index: 10;
+  background: var(--bpmn-background, #ffffff);
+  border: 1px solid var(--bpmn-border, #e5e7eb);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  min-width: 200px;
+}
+
+.djs-palette .group {
+  margin-bottom: 12px;
+}
+
+.djs-palette .group:last-child {
+  margin-bottom: 0;
+}
+
+.djs-palette .entry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 2px;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bpmn-surface, #f9fafb);
+  border: 1px solid transparent;
+  color: var(--bpmn-text, #111827);
+}
+
+.djs-palette .entry:hover {
+  background: var(--bpmn-primary, #3b82f6);
+  color: white;
+  transform: scale(1.05);
+}
+
+.djs-palette .entry:active {
+  transform: scale(0.95);
+}
+
+.djs-palette .entry.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.djs-palette .entry.disabled:hover {
+  background: var(--bpmn-surface, #f9fafb);
+  color: var(--bpmn-text, #111827);
+  transform: none;
+}
+
+/* 分组标题样式 */
+.djs-palette .group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bpmn-text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  padding-left: 4px;
+}
+
+/* 暗色主题下的palette */
+.dark .djs-palette {
+  background: var(--bpmn-background, #111827);
+  border-color: var(--bpmn-border, #374151);
+}
+
+.dark .djs-palette .entry {
+  background: var(--bpmn-surface, #1f2937);
+  color: var(--bpmn-text, #f9fafb);
+}
+
+.dark .djs-palette .entry:hover:not(.disabled) {
+  background: var(--bpmn-primary, #60a5fa);
+  color: white;
+}
+
+.dark .djs-palette .group-title {
+  color: var(--bpmn-text-secondary, #9ca3af);
 }
 
 .djs-overlay-container {
@@ -321,15 +596,55 @@
 
 /* 上下文菜单样式 */
 .djs-context-pad {
-  border-radius: 4px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--bpmn-background, #ffffff);
+  border: 1px solid var(--bpmn-border, #e5e7eb);
+  padding: 4px;
+  min-width: 48px;
+  min-height: 48px;
 }
 
 .djs-context-pad .entry {
-  padding: 8px 12px;
+  padding: 12px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bpmn-surface, #f9fafb);
+  border: 1px solid transparent;
+  color: var(--bpmn-text, #111827);
+}
+
+.djs-context-pad .entry:hover {
+  background: var(--bpmn-primary, #3b82f6);
+  color: white;
+  transform: scale(1.05);
+}
+
+.djs-context-pad .entry:active {
+  transform: scale(0.95);
+}
+
+/* 暗色主题下的上下文菜单 */
+.dark .djs-context-pad {
+  background: var(--bpmn-background, #111827);
+  border-color: var(--bpmn-border, #374151);
+}
+
+.dark .djs-context-pad .entry {
+  background: var(--bpmn-surface, #1f2937);
+  color: var(--bpmn-text, #f9fafb);
+}
+
+.dark .djs-context-pad .entry:hover {
+  background: var(--bpmn-primary, #60a5fa);
+  color: white;
 }
 
 /* BPMN 悬停效果 */
@@ -456,5 +771,163 @@
   .bpmn-loading-spinner {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* ========================================
+   响应式和无障碍支持
+   ======================================== */
+
+/* 响应式断点 */
+@media (max-width: 768px) {
+  /* 在平板及以下设备上隐藏palette */
+  .djs-palette {
+    display: none;
+  }
+
+  /* 隐藏缩放控件 */
+  .djs-zoom-controls {
+    display: none;
+  }
+
+  /* 调整属性面板为固定定位 */
+  .bpp-properties-panel {
+    position: fixed !important;
+    top: 0 !important;
+    right: -100% !important;
+    width: 320px !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    transition: right 0.3s ease !important;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .bpp-properties-panel.open {
+    right: 0 !important;
+  }
+
+  /* 移动端属性面板切换按钮 */
+  .properties-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bpmn-primary);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .djs-container {
+    font-size: 12px;
+  }
+
+  .djs-label {
+    font-size: 11px !important;
+  }
+
+  .bpp-properties-panel {
+    width: 280px !important;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .djs-element {
+    stroke-width: 3px !important;
+  }
+
+  .djs-element.selected .djs-hit {
+    stroke-width: 4px !important;
+  }
+
+  .djs-label {
+    font-weight: 600 !important;
+  }
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .djs-container *,
+  .bpmn-loading-spinner,
+  .custom-tooltip,
+  .toolbar-btn,
+  .bpmn-theme-switcher select {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 聚焦可见性 */
+.djs-container *:focus-visible,
+.bpmn-theme-switcher select:focus-visible,
+.toolbar-btn:focus-visible {
+  outline: 2px solid var(--bpmn-primary);
+  outline-offset: 2px;
+}
+
+/* 键盘导航支持 */
+.djs-element:focus {
+  outline: 2px solid var(--bpmn-primary);
+  outline-offset: 2px;
+}
+
+/* 屏幕阅读器支持 */
+.djs-element[aria-label],
+.djs-element[data-element-type] {
+  position: relative;
+}
+
+.djs-element[aria-label]::after,
+.djs-element[data-element-type]::after {
+  content: attr(aria-label) " (" attr(data-element-type) ")";
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* 颜色盲友好模式 */
+@media (prefers-color-scheme: dark) and (prefers-contrast: high) {
+  :root {
+    /* 在暗色高对比度模式下使用更多颜色区分 */
+    --bpmn-start-event-fill: #00ff00;
+    --bpmn-end-event-fill: #ff0000;
+    --bpmn-user-task-fill: #0000ff;
+    --bpmn-service-task-fill: #ff00ff;
+    --bpmn-gateway-fill: #ffff00;
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .djs-palette,
+  .djs-zoom-controls,
+  .bpp-properties-panel,
+  .bpmn-theme-switcher,
+  .bpmn-theme-debug-panel {
+    display: none !important;
+  }
+
+  .djs-container {
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+  }
+
+  .djs-label {
+    fill: #000 !important;
+    font-weight: 500 !important;
   }
 }

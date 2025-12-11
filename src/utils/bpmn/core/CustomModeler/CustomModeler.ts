@@ -8,6 +8,7 @@ import Modeler from 'bpmn-js/lib/Modeler';
 import { initialDiagram } from '../xmlStr';
 import { CustomLoggerService } from '../../modules/CustomLoggerService/CustomLoggerService';
 import { BpmnError, validateContainer, validateXml, withErrorHandling } from '../../utils/errors';
+import { getCurrentTheme } from '../../styles';
 
 /**
  * CustomModeler constructor options interface
@@ -17,6 +18,14 @@ export interface CustomModelerOptions {
   xml?: string;
   /** HTML element or selector containing the Modeler */
   container?: HTMLElement | string;
+  /** Properties panel parent element */
+  propertiesPanel?: {
+    parent?: HTMLElement | string;
+  };
+  /** Theme configuration */
+  theme?: string;
+  /** Additional modules to load */
+  additionalModules?: any[];
   /** Other bpmn-js Modeler options */
   [key: string]: any;
 }

@@ -4,7 +4,8 @@ import {
   CustomModeler,
   contextPadProviderModule,
   CustomPropertiesPanelModule,
-  paletteProviderModule
+  paletteProviderModule,
+  tokenSimulationModelerModule
 } from '@/utils/bpmn';
 import {
   BpmnThemeProvider,
@@ -22,9 +23,99 @@ import { Button } from '@/components/Commom';
 import { Link } from 'react-router-dom';
 
 /**
+ * 令牌模拟控制组件
+ */
+const TokenSimulationControls: React.FC<{ modeler: CustomModeler | null }> = ({ modeler }) => {
+  const [isSimulationMode, setIsSimulationMode] = useState(false);
+
+  const handleToggleSimulation = useCallback(() => {
+    if (modeler) {
+      // 切换模拟模式
+      const simulationSupport = (modeler as any).get('simulationSupport');
+      if (simulationSupport) {
+        const newMode = !isSimulationMode;
+        simulationSupport.toggleSimulation(newMode);
+        setIsSimulationMode(newMode);
+      }
+    }
+  }, [modeler, isSimulationMode]);
+
+  const handleTriggerStartEvent = useCallback(() => {
+    if (modeler && isSimulationMode) {
+      // 查找并触发Start Event
+      const elementRegistry = (modeler as any).get('elementRegistry');
+      const simulationSupport = (modeler as any).get('simulationSupport');
+
+      if (elementRegistry && simulationSupport) {
+        // 查找Start Event
+        const elements = elementRegistry.getAll();
+        const startEvent = elements.find((element: any) =>
+          element.type === 'bpmn:StartEvent'
+        );
+
+        if (startEvent) {
+          try {
+            simulationSupport.triggerElement(startEvent.id);
+          } catch (error) {
+            console.error('Failed to trigger start event:', error);
+          }
+        } else {
+          console.warn('No Start Event found in the diagram');
+        }
+      }
+    }
+  }, [modeler, isSimulationMode]);
+
+  const handleReset = useCallback(() => {
+    if (modeler && isSimulationMode) {
+      // 切换回编辑模式然后重新进入模拟模式来重置
+      const simulationSupport = (modeler as any).get('simulationSupport');
+      if (simulationSupport) {
+        simulationSupport.toggleSimulation(false);
+        setTimeout(() => {
+          simulationSupport.toggleSimulation(true);
+        }, 100);
+      }
+    }
+  }, [modeler, isSimulationMode]);
+
+  return (
+    <div className="flex items-center space-x-2 ml-4">
+      <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">🎭 模拟:</span>
+      <Button
+        onClick={handleToggleSimulation}
+        className={`px-3 py-1 text-sm ${
+          isSimulationMode
+            ? 'bg-blue-600 hover:bg-blue-700'
+            : 'bg-gray-600 hover:bg-gray-700'
+        }`}
+      >
+        {isSimulationMode ? '编辑模式' : '模拟模式'}
+      </Button>
+      {isSimulationMode && (
+        <>
+          <Button
+            onClick={handleTriggerStartEvent}
+            className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700"
+          >
+            ▶️ 开始流程
+          </Button>
+          <Button
+            onClick={handleReset}
+            className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700"
+          >
+            🔄 重置
+          </Button>
+        </>
+      )}
+    </div>
+  );
+};
+
+/**
  * BPMN画布内容组件
  */
-const BPMNCanvas: React.FC = () => {
+const BPMNCanvas: React.FC<{ onModelerReady: (modeler: CustomModeler) => void }> = ({ onModelerReady }) => {
   const modelerRef = useRef<HTMLDivElement>(null);
   const propertiesRef = useRef<HTMLDivElement>(null);
   const [modeler, setModeler] = useState<CustomModeler | null>(null);
@@ -41,12 +132,14 @@ const BPMNCanvas: React.FC = () => {
         additionalModules: [
           CustomPropertiesPanelModule,
           contextPadProviderModule,
-          paletteProviderModule
+          paletteProviderModule,
+          tokenSimulationModelerModule
         ]
       });
       setModeler(newModeler);
+      onModelerReady(newModeler);
     }
-  }, [modelerRef.current, theme.name]);
+  }, [modelerRef.current, theme.name, onModelerReady]);
 
   return (
     <>
@@ -83,6 +176,12 @@ const BPMNCanvas: React.FC = () => {
  * BPMN页面主组件
  */
 const BPMNPage: React.FC = () => {
+  const [modeler, setModeler] = useState<CustomModeler | null>(null);
+
+  const handleModelerReady = useCallback((newModeler: CustomModeler) => {
+    setModeler(newModeler);
+  }, []);
+
   return (
     <BpmnThemeProvider initialTheme="light" enableSystemTheme={true}>
       <div className="h-full flex flex-col bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
@@ -95,11 +194,12 @@ const BPMNPage: React.FC = () => {
             <BpmnThemeSwitcher />
           </div>
           <div className="flex items-center space-x-2">
+            <TokenSimulationControls modeler={modeler} />
           </div>
         </div>
 
         {/* BPMN画布内容 */}
-        <BPMNCanvas />
+        <BPMNCanvas onModelerReady={handleModelerReady} />
 
         {/* 开发调试面板 */}
         <BpmnThemeDebugPanel />

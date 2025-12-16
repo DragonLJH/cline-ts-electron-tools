@@ -103,18 +103,37 @@ export {
     default as paletteProviderModule,
 } from './modules/CustomPaletteProvider';
 
+import tokenSimulationModelerModule, {
+    createTokenSimulationModule,
+    tokenSimulationViewerModule
+} from './modules/CustomTokenSimulationModule';
+
+// 6. 令牌模拟模块 - BPMN流程令牌模拟功能
+export {
+    default as tokenSimulationModule,
+    tokenSimulationModelerModule,
+    tokenSimulationViewerModule,
+    createTokenSimulationModule
+} from './modules/CustomTokenSimulationModule';
+
+// Token Simulation类型导出
+export type {
+    TokenSimulationConfig
+} from './modules/CustomTokenSimulationModule';
+
 // =============================================================================
 // 便捷导入 - 常用组合
 // =============================================================================
 
 /**
  * BPMN建模器的标准附加模块集
- * 包含属性面板、右键菜单和调色板功能
+ * 包含属性面板、右键菜单、调色板和令牌模拟功能
  */
 export const standardBpmnModules = [
     CustomPropertiesPanelModule,
     contextPadProviderModule,
-    paletteProviderModule
+    paletteProviderModule,
+    tokenSimulationModelerModule
 ];
 
 /**
